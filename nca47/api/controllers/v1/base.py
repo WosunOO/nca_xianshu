@@ -40,6 +40,7 @@ class BaseRestController(rest.RestController):
     def post(self, req, *args, **kwargs):
         LOG.debug(_('args: %(args)s, kwargs: %(kwargs)s'),
                   {"args": args, "kwargs": kwargs})
+        """
         operation = args[0]
         req = pecan.request
         if operation == 'add':
@@ -58,6 +59,18 @@ class BaseRestController(rest.RestController):
             return self.delif(req, *args, **kwargs)
         else:
             pecan.abort(404)
+        """
+        try:
+            operation = args[0]
+            req = pecan.request
+            if operation == 'addif':
+                return self.addif(req, *args, **kwargs)
+            elif operation == 'delif':
+                return self.delif(req, *args, **kwargs)
+        except Exception as e:
+            pass
+
+        return self.create(req, *args, **kwargs)
 
     @expose
     def put(self, req, id, *args, **kwargs):

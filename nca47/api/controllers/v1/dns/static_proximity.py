@@ -62,17 +62,18 @@ class ProximityController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return proximitys
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         """update the dns proximitys by currentUser/owners"""
         # get the context
         context = req.context
         try:
             # get the url
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="proximity update", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="proximity update", msg=url)
             # get the body
             values = json.loads(req.body)
+            values['id'] = id
             LOG.info(_("the in value body is %(body)s"), {"body": values})
             # check the in values
             valid_attributes = ['new_priority', 'tenant_id', 'id']
@@ -95,17 +96,18 @@ class ProximityController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return proximitys
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """delete the dns proximitys"""
         # get the context
         context = req.context
         try:
             # get the body
             values = json.loads(req.body)
+            values['id'] = id
             # get the url
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="proximity delete", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="proximity delete", msg=url)
             # check the in values
             valid_attributes = ['tenant_id', 'id']
             # check the in values
@@ -153,14 +155,14 @@ class ProximityController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return proximitys
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """get one dns proximity info"""
         # get the context
         context = req.context
         try:
             LOG.info(_(" args is %(args)s"), {"args": args})
             # from rpc server get the proximity in device
-            proximitys = self.manager.get_sp_policy(context, args[0])
+            proximitys = self.manager.get_sp_policy(context, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))

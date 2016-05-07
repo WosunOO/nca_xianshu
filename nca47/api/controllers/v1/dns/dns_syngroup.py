@@ -67,7 +67,7 @@ class DnsSyngroupController(base.BaseRestController):
             return tools.ret_info(self.response.status, e.message)
         return syngroups
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         """
         update Syngroup method
         :param req:
@@ -80,13 +80,13 @@ class DnsSyngroupController(base.BaseRestController):
             url = req.url
             values = json.loads(req.body)
             LOG.info(_("the in value body if %(body)s"), {'body': values})
-            LOG.info(_("the id is %(id)s"), {"id": args[0]})
+            LOG.info(_("the id is %(id)s"), {"id": id})
             valid_attributes = [
                 "gslb_zone_names", "probe_range", "pass"
             ]
             self.check_update(valid_attributes, values)
             syngroups = self.manager.update_syngroup(
-                context, values, args[0])
+                context, values, id)
             # args[0] is id
         except Nca47Exception as e:
             self.response.status = e.code
@@ -103,7 +103,7 @@ class DnsSyngroupController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return syngroups
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """
         delete the syngroup method
         :param req:
@@ -116,9 +116,9 @@ class DnsSyngroupController(base.BaseRestController):
         try:
             url = req.url
             # LOG.info(_("The in value body is %(body)s"),{"body",values})
-            LOG.info(_("The id is %(id)s"), {"id": args[0]})
+            LOG.info(_("The id is %(id)s"), {"id": id})
             recom_msg = {}
-            syngroup = self.manager.delete_syngroup(context, args[0])
+            syngroup = self.manager.delete_syngroup(context, id)
         except Nca47Exception as e:
             LOG.error(_LE('Error exception! error info: %' + e.message))
             LOG.exception(e)
@@ -134,7 +134,7 @@ class DnsSyngroupController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return syngroup
 
-    def get(self,req,*args,**kwargs):
+    def get(self, req, *args, **kwargs):
         """
         # get info for one or more
         :param req:
@@ -177,7 +177,9 @@ class DnsSyngroupController(base.BaseRestController):
         """
         context = req.context
         try:
-            values = json.loads(req.body)
+            search_opts = {}
+            search_opts.update(req.GET)
+            # values = json.loads(req.body)
             # if 'device' in args:
             #     LOG.info(_("args is %(args)s,kwargs is %(kwargs)s"), {'args': args, 'kwargs': kwargs})
             #     zones = self.manager.list_syngroup(context)
@@ -185,7 +187,7 @@ class DnsSyngroupController(base.BaseRestController):
             LOG.info(
                 _("args is %(args)s,kwargs is %(kwargs)s"), {
                     'args': args, "kwargs": kwargs})
-            self.check_search(values)
+            self.check_search(search_opts)
             syngroup = self.manager.get_syngroups(context)
             LOG.info(_("Retrun of get_all_db_zone JSON is %(syngroup)s !"),
                      {"syngroup": syngroup})
@@ -205,7 +207,7 @@ class DnsSyngroupController(base.BaseRestController):
         return syngroup
 
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """
         get syngroup by id
         :param req:
@@ -217,7 +219,7 @@ class DnsSyngroupController(base.BaseRestController):
         context = req.context
         try:
             LOG.info(_("args is %(args)s"), {"args": args})
-            syngroup = self.manager.get_syngroup(context, args[0])
+            syngroup = self.manager.get_syngroup(context, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))

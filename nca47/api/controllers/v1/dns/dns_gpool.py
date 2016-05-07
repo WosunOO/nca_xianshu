@@ -113,7 +113,7 @@ class DnsGPoolController(base.BaseRestController):
             return tools.ret_info(self.response.status, e.message)
         return gpools
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """
         delete GPool method
         :param req:
@@ -126,9 +126,9 @@ class DnsGPoolController(base.BaseRestController):
         try:
             url = req.url
             # LOG.info(_("The in value body is %(body)s"),{"body",values})
-            LOG.info(_("The id is %(id)s"), {"id": args[0]})
+            LOG.info(_("The id is %(id)s"), {"id": id})
             recom_msg = {}
-            syngroup = self.manager.delete_gpool(context, args[0])
+            syngroup = self.manager.delete_gpool(context, id)
         except Nca47Exception as e:
             LOG.error(_LE('Error exception! error info: %' + e.message))
             LOG.exception(e)
@@ -156,12 +156,14 @@ class DnsGPoolController(base.BaseRestController):
 
         context = req.context
         try:
-            values = json.loads(req.body)
-            self.check_search(values)
+            search_opts = {}
+            search_opts.update(req.GET)
+            #values = json.loads(req.body)
+            self.check_search(search_opts)
             LOG.info(
                 _("args is %(args)s,kwargs is %(kwargs)s"), {
                     'args': args, "kwargs": kwargs})
-            syngroup = self.manager.get_gpools(context,values)
+            syngroup = self.manager.get_gpools(context, search_opts)
             LOG.info(_("Retrun of get_all_db_zone JSON is %(zones)s !"),
                      {"syngroup": syngroup})
         except Nca47Exception as e:
@@ -179,7 +181,7 @@ class DnsGPoolController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return syngroup
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """
         get GPool method
         :param req:
@@ -191,7 +193,7 @@ class DnsGPoolController(base.BaseRestController):
         context = req.context
         try:
             LOG.info(_("args is %(args)s"), {"args": args})
-            syngroup = self.manager.get_gpool(context, args[0])
+            syngroup = self.manager.get_gpool(context, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))

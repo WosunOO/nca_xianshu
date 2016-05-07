@@ -52,18 +52,18 @@ class DnsHmTemplateController(base.BaseRestController):
             self.response.status = 500
             return tool.ret_info(self.response.status, e.message)
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         """update the dns hm template"""
         try:
             LOG.info(_("update hm template:body is %(json)s, args is %(args)s,"
                        "kwargs is %(kwargs)s"),
                      {"json": req.body, "args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="hm template update", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="hm template update", msg=url)
             dic = json.loads(req.body)
             c = req.context
-            response = self.manager.update_hm_template(c, dic, args[0])
+            response = self.manager.update_hm_template(c, dic, id)
             LOG.info(_("Return of update hm template JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -84,18 +84,18 @@ class DnsHmTemplateController(base.BaseRestController):
             self.response.status = 500
             return tool.ret_info(self.response.status, e.message)
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """delete the dns hm template"""
         try:
             LOG.info(_("delete hm template:body is %(json)s, args is %(args)s,"
                        "kwargs is %(kwargs)s"),
                      {"json": req.body, "args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="hm template remove", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="hm template remove", msg=url)
             c = req.context
             """from rpc server delete the hm template"""
-            response = self.manager.delete_hm_template(c, args[0])
+            response = self.manager.delete_hm_template(c, id)
             LOG.info(_("Return of remove hm template JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -116,17 +116,17 @@ class DnsHmTemplateController(base.BaseRestController):
             self.response.status = 500
             return tool.ret_info(self.response.status, e.message)
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """get one of the dns hm template"""
         try:
             LOG.info(_("get a hm template: args is %(args)s, "
                        "kwargs is %(kwargs)s"),
                      {"args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="hm template query one ", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="hm template query one ", msg=url)
             context = req.context
-            response = self.manager.get_one_hm_template_db(context, args[0])
+            response = self.manager.get_one_hm_template_db(context, id)
             LOG.info(_("Return of hm template JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -154,8 +154,8 @@ class DnsHmTemplateController(base.BaseRestController):
                        "kwargs is %(kwargs)s"),
                      {"args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 0:
-                raise BadRequest(resource="hm template query all", msg=url)
+            # if len(args) != 0:
+            #     raise BadRequest(resource="hm template query all", msg=url)
             context = req.context
             response = self.manager.get_hm_templates_db(context)
             LOG.info(_("Return of get all hm template JSON is %(response)s !"),

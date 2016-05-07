@@ -89,7 +89,7 @@ class DnsGmemberController(base.BaseRestController):
             self.response.status = 500
             return tool.ret_info(self.response.status, e.message)
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """delete the dns gmember"""
         try:
             LOG.info(_("delete gmember:body is %(json)s, args is %(args)s, "
@@ -100,7 +100,7 @@ class DnsGmemberController(base.BaseRestController):
                 raise BadRequest(resource="gmember remove", msg=url)
             c = req.context
             """from rpc server delete the gmember"""
-            response = self.manager.delete_gmember(c, args[0])
+            response = self.manager.delete_gmember(c, id)
             LOG.info(_("Return of remove gmember JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -121,17 +121,17 @@ class DnsGmemberController(base.BaseRestController):
             self.response.status = 500
             return tool.ret_info(self.response.status, e.message)
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """get one of the dns gmember"""
         try:
             LOG.info(_("get a gmember: args is %(args)s, "
                        "kwargs is %(kwargs)s"),
                      {"args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="gmember query one ", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="gmember query one ", msg=url)
             context = req.context
-            response = self.manager.get_one_gmember_db(context, args[0])
+            response = self.manager.get_one_gmember_db(context, id)
             LOG.info(_("Return of gmember JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -159,8 +159,8 @@ class DnsGmemberController(base.BaseRestController):
                        "kwargs is %(kwargs)s"),
                      {"args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 0:
-                raise BadRequest(resource="gmember query all", msg=url)
+            # if len(args) != 0:
+            #     raise BadRequest(resource="gmember query all", msg=url)
             context = req.context
             response = self.manager.get_gmembers_db(context)
             LOG.info(_("Return of get all gmember JSON  is %(response)s !"),

@@ -57,13 +57,14 @@ class DnsRecordsController(base.BaseRestController):
                  {"record": record})
         return record
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         """update the dns zone_record"""
         url = req.url
         try:
-            if len(args) != 1:
-                raise BadRequest(resource="record update", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="record update", msg=url)
             dic = json.loads(req.body)
+            dic['id'] = id
             list_ = ["tenant_id", "id"]
             if "ttl" not in dic.keys() and "rdata" not in dic.keys():
                 raise ParamIsNotHaveError(param_name="rdata or ttl")
@@ -105,14 +106,15 @@ class DnsRecordsController(base.BaseRestController):
                  {"record": record})
         return record
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """delete the dns zone_record"""
         url = req.url
         try:
-            if len(args) != 1:
-                raise BadRequest(resource="record remove", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="record remove", msg=url)
             dic = json.loads(req.body)
             list_ = ["tenant_id", "id"]
+            dic['id'] = id
             dic_body = self.validat_parms(dic, list_)
             # get the body
             # validate the in values of the zone_record
@@ -139,7 +141,7 @@ class DnsRecordsController(base.BaseRestController):
                  {"record": record})
         return record
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """get the one of the dns zone_record"""
         record = None
         try:

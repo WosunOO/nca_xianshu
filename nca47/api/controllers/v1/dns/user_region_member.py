@@ -61,17 +61,18 @@ class RegionMemberController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return regions
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """delete the dns region members"""
         # get the context
         context = req.context
         try:
             # get the body
             values = json.loads(req.body)
+            values['id'] = id
             # get the url
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="region member delete", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="region member delete", msg=url)
             # check the in values
             valid_attributes = ['tenant_id', 'id']
             # check the in values

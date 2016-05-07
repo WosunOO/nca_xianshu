@@ -77,19 +77,19 @@ class DnsZonesController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return zones
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         """update the dns zones by currentUser/owners"""
         # get the context
         context = req.context
         try:
             # get the url
             url = req.url
-            if len(args) > 2:
-                raise BadRequest(resource="zone update", msg=url)
+            # if len(args) > 2:
+            #     raise BadRequest(resource="zone update", msg=url)
             # get the body
             values = json.loads(req.body)
             LOG.info(_("the in value body is %(body)s"), {"body": values})
-            LOG.info(_("the id is %(id)s"), {"id": args[0]})
+            LOG.info(_("the id is %(id)s"), {"id": id})
             if len(args) is 2:
                 if args[1] == 'owners':
                     # check the in values
@@ -160,7 +160,7 @@ class DnsZonesController(base.BaseRestController):
         # get the context
         context = req.context
         try:
-            if 'device' in args:
+            if kwargs.get('device'):
                 LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                          {"args": args, "kwargs": kwargs})
                 # from rpc server get the zones in device
@@ -187,19 +187,19 @@ class DnsZonesController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return zones
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """get one dns zone info"""
         # get the context
         context = req.context
         try:
-            if 'device' in args:
+            if kwargs.get('device'):
                 LOG.info(_(" args is %(args)s"), {"args": args})
                 # from rpc server get the zone in device
                 zones = self.manager.get_zones(context)
             else:
                 LOG.info(_(" args is %(args)s"), {"args": args})
                 # from rpc server get the zone in db
-                zones = self.manager.get_zone_db_details(context, args[0])
+                zones = self.manager.get_zone_db_details(context, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))

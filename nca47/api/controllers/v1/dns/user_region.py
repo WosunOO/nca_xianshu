@@ -57,17 +57,18 @@ class RegionController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return regions
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """delete the dns regions"""
         # get the context
         context = req.context
         try:
             # get the body
             values = json.loads(req.body)
+            values['id'] = id
             # get the url
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="region delete", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="region delete", msg=url)
             # check the in values
             valid_attributes = ['tenant_id', 'id']
             # check the in values
@@ -95,7 +96,7 @@ class RegionController(base.BaseRestController):
         # get the context
         context = req.context
         try:
-            if 'device' in args:
+            if kwargs.get('device'):
                 LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                          {"args": args, "kwargs": kwargs})
                 # from rpc server get the regions in device
@@ -122,19 +123,19 @@ class RegionController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return regions
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """get one dns region info"""
         # get the context
         context = req.context
         try:
-            if 'device' in args:
+            if kwargs.get('device'):
                 LOG.info(_(" args is %(args)s"), {"args": args})
                 # from rpc server get the region in device
                 regions = self.manager.get_region(context)
             else:
                 LOG.info(_(" args is %(args)s"), {"args": args})
                 # from rpc server get the region in db
-                regions = self.manager.get_region_db_detail(context, args[0])
+                regions = self.manager.get_region_db_detail(context, id)
                 regions_user = self.manager.get_members(context, regions.name)
                 region_users = []
                 for key in regions_user:

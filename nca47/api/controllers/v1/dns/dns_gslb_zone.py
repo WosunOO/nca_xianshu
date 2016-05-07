@@ -61,15 +61,15 @@ class Glsb_zoneController(base.BaseRestController):
             self.response.status = 500
             return tools.ret_info(self.response.status, e.message)
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         try:
             url = req.url
-            if len(args) > 1:
-                raise BadRequest(resource="gslb_zone del", msg=url)
+            # if len(args) > 1:
+            #     raise BadRequest(resource="gslb_zone del", msg=url)
             context = req.context
             body_values={}
 #             body_values = json.loads(req.body)
-            gslb_zone_id = args[0]
+            gslb_zone_id = id
             body_values["id"] = gslb_zone_id
             # input the gslb_zone values with dic format
             LOG.info(_LI("delete the gslb_zone values with dic format\
@@ -93,11 +93,11 @@ class Glsb_zoneController(base.BaseRestController):
             self.response.status = 500
             return tools.ret_info(self.response.status, e.message)
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         try:
             url = req.url
-            if len(args) > 1:
-                raise BadRequest(resource="gslb_zone del", msg=url)
+            # if len(args) > 1:
+            #     raise BadRequest(resource="gslb_zone del", msg=url)
             context = req.context
             body_values = json.loads(req.body)
             gslb_zone_id = args[0]
@@ -118,7 +118,8 @@ class Glsb_zoneController(base.BaseRestController):
                          is %(json)s"),
                      {"json": body_values})
 
-            response = self.manager.update_gslb_zone(context, gslb_zone_id, values)
+            response = self.manager.update_gslb_zone(
+                context, gslb_zone_id, values)
             return response
         except Nca47Exception as e:
             self.response.status = e.code
@@ -138,13 +139,13 @@ class Glsb_zoneController(base.BaseRestController):
     def list(self, req, *args, **kwargs):
         try:
             url = req.url
-            if len(args) > 1:
-                raise BadRequest(resource="gslb_zone getAll", msg=url)
+            # if len(args) > 1:
+            #     raise BadRequest(resource="gslb_zone getAll", msg=url)
             context = req.context
-            body_values = {}
+            search_opts = {}
             # input the staticnat values with dic format
             LOG.info(_LI("get_all the gslb_zone"))
-            response = self.manager.get_gslb_zones(context, body_values)
+            response = self.manager.get_gslb_zones(context, search_opts)
             return response
         except Nca47Exception as e:
             self.response.status = e.code
@@ -161,14 +162,14 @@ class Glsb_zoneController(base.BaseRestController):
             self.response.status = 500
             return tools.ret_info(self.response.status, e.message)
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         try:
             url = req.url
-            if len(args) > 1:
-                raise BadRequest(resource="gslb_zone get", msg=url)
+            # if len(args) > 1:
+            #     raise BadRequest(resource="gslb_zone get", msg=url)
             context = req.context
             body_values = {}
-            gslb_zone_id = args[0]
+            gslb_zone_id = id
             body_values["id"] = gslb_zone_id
             # input the gslb_zone values with dic format
             LOG.info(_LI("get the staticnat values with dic format\

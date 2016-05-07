@@ -101,7 +101,7 @@ class DnsGMapController(base.BaseRestController):
             return tools.ret_info(self.response.status, e.message)
         return gmaps
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """
         delete GMap method
         :param req:
@@ -113,9 +113,9 @@ class DnsGMapController(base.BaseRestController):
         try:
             url = req.url
             # LOG.info(_("The in value body is %(body)s"),{"body",values})
-            LOG.info(_("The id is %(id)s"), {"id": args[0]})
+            LOG.info(_("The id is %(id)s"), {"id": id})
             recom_msg = {}
-            syngroup = self.manager.delete_gmap(context, args[0])
+            syngroup = self.manager.delete_gmap(context, id)
         except Nca47Exception as e:
             LOG.error(_LE('Error exception! error info: %' + e.message))
             LOG.exception(e)
@@ -140,17 +140,21 @@ class DnsGMapController(base.BaseRestController):
         :return:  return http response
         """
         context = req.context
-        values = json.loads(req.body)
+        search_opts = {}
+        search_opts.update(req.GET)
+        LOG.info(_("search_opts is %s"), search_opts)
+        # values = json.loads(req.body)
         try:
             # if 'device' in args:
-            #     LOG.info(_("args is %(args)s,kwargs is %(kwargs)s"), {'args': args, 'kwargs': kwargs})
+            #     LOG.info(_("args is %(args)s,kwargs is %(kwargs)s"),
+            #              {'args': args, 'kwargs': kwargs})
             #     zones = self.manager.list_syngroup(context)
             # else:
             LOG.info(
                 _("args is %(args)s,kwargs is %(kwargs)s"), {
                     'args': args, "kwargs": kwargs})
-            self.check_search(values)
-            syngroup = self.manager.get_gmaps(context,values)
+            self.check_search(search_opts)
+            syngroup = self.manager.get_gmaps(context, search_opts)
             LOG.info(_("Retrun of get_all_db_zone JSON is %(zones)s !"),
                      {"syngroup": syngroup})
         except Nca47Exception as e:
@@ -168,7 +172,7 @@ class DnsGMapController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return syngroup
 
-    def show(self, req, *args, **kwargs):
+    def show(self, req, id, *args, **kwargs):
         """
         get GMap method
         :param req:
@@ -179,7 +183,7 @@ class DnsGMapController(base.BaseRestController):
         context = req.context
         try:
             LOG.info(_("args is %(args)s"), {"args": args})
-            syngroup = self.manager.get_gmap(context, args[0])
+            syngroup = self.manager.get_gmap(context, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))
