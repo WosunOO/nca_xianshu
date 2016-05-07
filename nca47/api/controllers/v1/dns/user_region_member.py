@@ -37,8 +37,8 @@ class RegionMemberController(base.BaseRestController):
             values = json.loads(req.body)
             # get the url
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="region member create", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="region member create", msg=url)
             # check the in values
             valid_attributes = ['tenant_id', 'type', 'region_uuid', 'data1']
             # check the in values
@@ -67,7 +67,8 @@ class RegionMemberController(base.BaseRestController):
         context = req.context
         try:
             # get the body
-            values = json.loads(req.body)
+            values = {}
+            values.update(kwargs)
             values['id'] = id
             # get the url
             url = req.url

@@ -26,8 +26,8 @@ class DnsRecordsController(base.BaseRestController):
         """create the dns zone_record"""
         url = req.url
         try:
-            if len(args) != 1:
-                raise BadRequest(resource="record create", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="record create", msg=url)
             list1 = ['name', 'type', 'rdata', "tenant_id"]
             list2 = ['ttl', "klass"]
             # get the body
@@ -112,7 +112,8 @@ class DnsRecordsController(base.BaseRestController):
         try:
             # if len(args) != 1:
             #     raise BadRequest(resource="record remove", msg=url)
-            dic = json.loads(req.body)
+            dic = {}
+            dic.update(kwargs)
             list_ = ["tenant_id", "id"]
             dic['id'] = id
             dic_body = self.validat_parms(dic, list_)
@@ -146,23 +147,22 @@ class DnsRecordsController(base.BaseRestController):
         record = None
         try:
             context = req.context
-            if 'device' in args:
+            if kwargs.get('device'):
                 url = req.url
-                if len(args) != 2:
-                    raise BadRequest(resource="record show_dev", msg=url)
+                # if len(args) != 2:
+                #     raise BadRequest(resource="record show_dev", msg=url)
                 LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                          {"args": args, "kwargs": kwargs})
                 # from rpc server show the zone_record
-                record = self.manager.get_dev_records(context,
-                                                      args[1])
+                record = self.manager.get_dev_records(context, id)
             else:
                 url = req.url
-                if len(args) != 1:
-                    raise BadRequest(resource="record show_db", msg=url)
+                # if len(args) != 1:
+                #     raise BadRequest(resource="record show_db", msg=url)
                 LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                          {"args": args, "kwargs": kwargs})
                 # from db server show the zone_record
-                record = self.manager.get_db_records(context, args[0])
+                record = self.manager.get_db_records(context, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))

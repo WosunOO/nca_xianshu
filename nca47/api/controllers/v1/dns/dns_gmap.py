@@ -65,7 +65,7 @@ class DnsGMapController(base.BaseRestController):
             return tools.ret_info(self.response.status, e.message)
         return gmaps
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         """
         Update GMap method
         :param req:
@@ -85,7 +85,7 @@ class DnsGMapController(base.BaseRestController):
             ]
             self.check_update(valid_attrbutes, values)
             LOG.info(_('the in value body is %(body)s'), {'body': values})
-            gmaps = self.manager.update_gmap(context, values, args[0])
+            gmaps = self.manager.update_gmap(context, values, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE("Error exception ! error info:%" + e.message))

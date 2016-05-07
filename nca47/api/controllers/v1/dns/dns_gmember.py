@@ -96,8 +96,8 @@ class DnsGmemberController(base.BaseRestController):
                        "kwargs is %(kwargs)s"),
                      {"json": req.body, "args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="gmember remove", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="gmember remove", msg=url)
             c = req.context
             """from rpc server delete the gmember"""
             response = self.manager.delete_gmember(c, id)

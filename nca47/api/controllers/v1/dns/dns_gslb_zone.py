@@ -100,7 +100,7 @@ class Glsb_zoneController(base.BaseRestController):
             #     raise BadRequest(resource="gslb_zone del", msg=url)
             context = req.context
             body_values = json.loads(req.body)
-            gslb_zone_id = args[0]
+            gslb_zone_id = id
             valid_attributes = ['enable', 'devices', 'syn_server']
 #             valid_devices = ["group_name", "device_name"]
             values = tools.validat_values(body_values, valid_attributes)
@@ -143,6 +143,7 @@ class Glsb_zoneController(base.BaseRestController):
             #     raise BadRequest(resource="gslb_zone getAll", msg=url)
             context = req.context
             search_opts = {}
+            search_opts.update(req.GET)
             # input the staticnat values with dic format
             LOG.info(_LI("get_all the gslb_zone"))
             response = self.manager.get_gslb_zones(context, search_opts)

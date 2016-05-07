@@ -36,8 +36,8 @@ class ProximityController(base.BaseRestController):
             values = json.loads(req.body)
             # get the url
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="proximity create", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="proximity create", msg=url)
             # check the in values
             valid_attributes = ['tenant_id', 'priority', 'src_type',
                                 'src_logic', 'src_data1', 'dst_type',
@@ -102,7 +102,8 @@ class ProximityController(base.BaseRestController):
         context = req.context
         try:
             # get the body
-            values = json.loads(req.body)
+            values = {}
+            values.update(kwargs)
             values['id'] = id
             # get the url
             url = req.url

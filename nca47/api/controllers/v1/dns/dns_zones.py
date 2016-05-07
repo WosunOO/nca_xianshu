@@ -41,8 +41,8 @@ class DnsZonesController(base.BaseRestController):
             values = json.loads(req.body)
             # get the url
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="zone create", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="zone create", msg=url)
             if 'default_ttl' not in values.keys():
                 values['default_ttl'] = "3600"
             if 'renewal' not in values.keys():
@@ -88,19 +88,16 @@ class DnsZonesController(base.BaseRestController):
             #     raise BadRequest(resource="zone update", msg=url)
             # get the body
             values = json.loads(req.body)
+            values['id'] = id
             LOG.info(_("the in value body is %(body)s"), {"body": values})
             LOG.info(_("the id is %(id)s"), {"id": id})
-            if len(args) is 2:
-                if args[1] == 'owners':
-                    # check the in values
-                    valid_attributes = ['id', 'tenant_id', 'owners']
-                    recom_msg = self.validat_parms(values, valid_attributes)
-                    # from rpc server update the zones in db and device
-                    zones = self.manager.update_zone_owners(context, recom_msg,
-                                                            recom_msg['id'])
-                else:
-                    # return the wrong message
-                    raise BadRequest(resource="zone update", msg=url)
+            if kwargs.get('owners'):
+                # check the in values
+                valid_attributes = ['id', 'tenant_id', 'owners']
+                recom_msg = self.validat_parms(values, valid_attributes)
+                # from rpc server update the zones in db and device
+                zones = self.manager.update_zone_owners(context, recom_msg,
+                                                        recom_msg['id'])
             else:
                 # check the in values
                 valid_attributes = ['id', 'tenant_id', 'default_ttl']
@@ -123,17 +120,19 @@ class DnsZonesController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return zones
 
-    def remove(self, req, *args, **kwargs):
+    def remove(self, req, id, *args, **kwargs):
         """delete the dns zones"""
         # get the context
         context = req.context
         try:
             # get the url
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="zone delete", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="zone delete", msg=url)
             # get the body
-            values = json.loads(req.body)
+            values = {}
+            values.update(kwargs)
+            values['id'] = id
             LOG.info(_("the in value body is %(body)s"), {"body": values})
             # check the in values
             valid_attributes = ['tenant_id', 'id']
