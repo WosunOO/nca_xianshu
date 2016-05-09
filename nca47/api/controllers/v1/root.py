@@ -2,6 +2,7 @@ import pecan
 
 from nca47.api.controllers.v1 import firewall
 from nca47.api.controllers.v1 import dns
+from nca47.api.controllers.v1 import routerSwitch
 from nca47.api.controllers.v1 import agent
 
 
@@ -19,6 +20,8 @@ class V1Controller(object):
             return dns.DNSController(), remainder
         elif kind == "firewall":
             return firewall.FirewallController(), remainder
+        elif kind == "routerswitch":
+            return routerSwitch.RouterSwitchController(), remainder
         elif kind == "agent":
             return agent.AgentController(), remainder
         else:

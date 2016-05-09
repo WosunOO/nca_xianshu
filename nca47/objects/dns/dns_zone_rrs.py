@@ -53,3 +53,7 @@ class DnsZoneRrs(base.Nca47Object):
     def get_object(self, context, **values):
         record = self.db_api.get_object(ZoneRecord, **values)
         return record
+
+    def get_all_object(self, str_sql):
+        record = self.db_api.get_all_object(ZoneRecord, str_sql)
+        return record

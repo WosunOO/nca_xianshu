@@ -4,6 +4,8 @@ from nca47.api.controllers.v1 import tools as tool
 from oslo_log import log as logging
 from nca47.manager import central
 from nca47.common.exception import Nca47Exception
+from nca47.common.exception import ParamNull
+from nca47.common.exception import NonExistParam
 from nca47.common.exception import BadRequest
 from nca47.common.exception import ParamValueError
 from oslo_serialization import jsonutils as json
@@ -26,8 +28,8 @@ class DnsGmemberController(base.BaseRestController):
                        "kwargs is %(kwargs)s"),
                      {"json": req.body, "args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 0:
-                raise BadRequest(resource="gmember create", msg=url)
+            # if len(args) != 0:
+            #     raise BadRequest(resource="gmember create", msg=url)
             array = ["gslb_zone_name", "tenant_id", "name",
                     "ip", "port", "enable"]
             # get the body
@@ -54,21 +56,22 @@ class DnsGmemberController(base.BaseRestController):
             self.response.status = 500
             return tool.ret_info(self.response.status, e.message)
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         """update the dns gmember"""
         try:
             LOG.info(_("update gmember:body is %(json)s, args is %(args)s,"
                        "kwargs is %(kwargs)s"),
                      {"json": req.body, "args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 1:
-                raise BadRequest(resource="gmember update", msg=url)
+            # if len(args) != 1:
+            #     raise BadRequest(resource="gmember update", msg=url)
             # get the body
             dic = json.loads(req.body)
-            list_ = ["enable"]
+            dic['id'] = id
+            list_ = ["enable", "id"]
             dic_body = self.validat_parms(dic, list_)
             c = req.context
-            response = self.manager.update_gmember(c, dic_body, args[0])
+            response = self.manager.update_gmember(c, dic_body, dic['id'])
             LOG.info(_("Return of update gmember JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -99,8 +102,12 @@ class DnsGmemberController(base.BaseRestController):
             # if len(args) != 1:
             #     raise BadRequest(resource="gmember remove", msg=url)
             c = req.context
+            dic = json.loads(req.body)
+            dic['id'] = id
+            if not tool.is_not_nil(dic['id']):
+                raise ParamNull(param_name="id")
             """from rpc server delete the gmember"""
-            response = self.manager.delete_gmember(c, id)
+            response = self.manager.delete_gmember(c, dic['id'])
             LOG.info(_("Return of remove gmember JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -162,7 +169,16 @@ class DnsGmemberController(base.BaseRestController):
             # if len(args) != 0:
             #     raise BadRequest(resource="gmember query all", msg=url)
             context = req.context
-            response = self.manager.get_gmembers_db(context)
+            dic = {}
+            dic.update(req.GET)
+            list_ = ["tenant_id"]
+            key = dic.keys()
+            for val in list_:
+                if val not in key:
+                    raise NonExistParam(param_name=val)
+            if not tool.is_not_nil(dic['tenant_id']):
+                raise ParamNull(param_name="tenant_id")
+            response = self.manager.get_gmembers_db(context, dic)
             LOG.info(_("Return of get all gmember JSON  is %(response)s !"),
                      {"response": response})
             return response

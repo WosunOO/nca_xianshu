@@ -59,3 +59,7 @@ class ProximityInfo(base.Nca47Object):
     def get_objects(self, context, **values):
         region = self.db_api.get_objects(ProximityModel, **values)
         return region
+
+    def get_all_object(self, context, values):
+        region = self.db_api.get_all_object(ProximityModel, values)
+        return region

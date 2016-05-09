@@ -22,16 +22,14 @@ class fw_driver(object):
             FW_DRIVER = cls()
         return FW_DRIVER
 
-    def create_vlan(self, context, view, dic):
+    def create_vlan(self, context, vlan_infos):
         """  creat vlan to webservice  """
-        vlanId = dic["vlan_id_o"]
-        ipAddr = tools.joinString(dic["ipaddr"])
-        ifNames = tools.joinString(dic["ifnames"])
-        ws_ip = "http://" + view['agent_nat_ip']
-        other_ip = "/func/web_main/wsdl/vlan/vlan.wsdl"
-        url = "%s%s" % (ws_ip, other_ip)
-        LOG.info("creat vlan to webservice: " + url)
-        service = self.ws_client.get_client(url)
+        vlanId = vlan_infos["vlan_id_o"]
+        ipAddr = tools.joinString(vlan_infos["ipaddr"])
+        ifNames = tools.joinString(vlan_infos["ifnames"])
+        url_dir = "/func/web_main/wsdl/vlan/vlan.wsdl"
+        LOG.info("creat vlan to webservice: " + url_dir)
+        service = self.ws_client.get_client(url_dir)
         vlan_dic = {}
         vlan_dic['vlanId'] = vlanId
         vlan_dic['ipAddr'] = ipAddr

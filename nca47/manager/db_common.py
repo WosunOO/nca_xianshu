@@ -65,10 +65,10 @@ class DBCommon(object):
             LOG.error(_LE("Cannot get the corresponding vres and agent"
                           " information!"))
             raise exception.NoexistOrMultipleError(
-                 param_name="the vres_agent view object with tenant_id=%s, "
-                            "dc_name=%s, network_zone=%s, agent_type=%s"
-                            % (kwargs['tenant_id'], kwargs['dc_name'],
-                               kwargs['network_zone'], kwargs['agent_type']))
+                param_name="the vres_agent view object with tenant_id=%s, "
+                "dc_name=%s, network_zone=%s, agent_type=%s"
+                % (kwargs['tenant_id'], kwargs['dc_name'],
+                   kwargs['network_zone'], kwargs['agent_type']))
         return obj
 
     def get_fw_vfw_id(self, context, **kwargs):
@@ -161,3 +161,11 @@ class DBCommon(object):
         input_operation_history['method'] = method_val
         input_operation_history['status'] = status_val
         return input_operation_history
+
+    def put_sql(self, str_sql, lik_dic, search_dic):
+        sql_ = ""
+        for lik in lik_dic:
+            sql_ = sql_ + " and " + lik + " like '%%" + lik_dic[lik] + "%%'"
+        for sea in search_dic:
+            sql_ = sql_ + " and " + sea + " = '" + search_dic[sea] + "'"
+        return str_sql + sql_

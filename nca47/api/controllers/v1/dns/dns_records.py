@@ -4,6 +4,7 @@ from nca47.api.controllers.v1 import tools as tool
 from oslo_log import log as logging
 from nca47.manager import central
 from nca47.common.exception import Nca47Exception
+from nca47.common.exception import NonExistParam
 from nca47.common.exception import ParamIsNotHaveError
 from nca47.common.exception import ParamNull
 from nca47.common.exception import ParamValueError
@@ -28,7 +29,11 @@ class DnsRecordsController(base.BaseRestController):
         try:
             # if len(args) != 1:
             #     raise BadRequest(resource="record create", msg=url)
-            list1 = ['name', 'type', 'rdata', "tenant_id"]
+            # test environment begin
+            list1 = ['name', 'type', 'rdata', "tenant_id", "environment_name"]
+            # end
+            # production environment
+            # list1 = ['name', 'type', 'rdata', "tenant_id"]
             list2 = ['ttl', "klass"]
             # get the body
             dic = json.loads(req.body)
@@ -162,7 +167,53 @@ class DnsRecordsController(base.BaseRestController):
                 LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                          {"args": args, "kwargs": kwargs})
                 # from db server show the zone_record
-                record = self.manager.get_db_records(context, id)
+                record = self.manager.get_db_records(context, args[0])
+        except Nca47Exception as e:
+            self.response.status = e.code
+            LOG.error(_LE('Error exception! error info: %' + e.message))
+            LOG.exception(e)
+            return tool.ret_info(e.code, e.message)
+        except RemoteError as exception:
+            self.response.status = 500
+            message = exception.value
+            return tool.ret_info(self.response.status, message)
+        except Exception as exception:
+            LOG.exception(exception)
+            self.response.status = 500
+            return tool.ret_info(self.response.status, exception.message)
+        LOG.info(_("Return of show_record JSON  is %(record)s !"),
+                 {"record": record})
+        return record
+
+    def list(self, req, *args, **kwargs):
+        """get the one of the dns zone_record"""
+        record = None
+        try:
+            context = req.context
+            url = req.url
+            # if len(args) != 1:
+            #     raise BadRequest(resource="show records", msg=url)
+            LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
+                     {"args": args, "kwargs": kwargs})
+            dic = {}
+            dic.update(req.GET)
+            # production environment
+            # list_ = ["tenant_id"]
+            # test environment begin
+            list_ = ["tenant_id", "environment_name"]
+            # end
+            key = dic.keys()
+            for val in list_:
+                if val not in key:
+                    raise NonExistParam(param_name=val)
+            if not tool.is_not_nil(dic['tenant_id']):
+                raise ParamNull(param_name="tenant_id")
+            # test environment begin
+            if not tool.is_not_nil(dic['environment_name']):
+                raise ParamNull(param_name="environment_name")
+            # end
+            # from db server show the zone_records
+            record = self.manager.query_records(context, dic)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))

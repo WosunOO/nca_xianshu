@@ -5,6 +5,7 @@ from netaddr.core import INET_PTON
 from nca47.common.exception import ParamNull
 from nca47.common.exception import NonExistParam
 from nca47.common.exception import checkParam
+import json
 
 
 def check_renewal(renewal):
@@ -16,8 +17,8 @@ def check_renewal(renewal):
 
 def check_areaname(name):
     """check into the area name"""
-    if re.match(r'^(?=^.{3,255}$)(http(s)?:\/\/)?(www\.)?[a-zA-Z0-9]'\
-                '[-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+'\
+    if re.match(r'^(?=^.{3,255}$)(http(s)?:\/\/)?(www\.)?[a-zA-Z0-9]'
+                '[-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+'
                 '(:\d+)*(\/\w+\.\w+)*$',
                 name, re.M | re.I):
         return True
@@ -262,18 +263,37 @@ def joinString(dic):
     return str_n
 
 
-def get_obj_list(input_str, results):
-
-    input_list = input_str.split(',')
-    obj_list_dic = []
-    for obj in results:
-        obj_list = {}
-        index = 0
-        for indx in input_list:
-            obj_list[indx] = obj[index]
-            index = index+1
-        obj_list_dic.append(obj_list)
-    return obj_list_dic
+def get_obj_list(keys, values):
+    obj_list = []
+    for value in values:
+        obj_dic = {}
+        for column in xrange(len(keys)):
+            obj_dic[keys[column]] = value[column]
+        obj_list.append(obj_dic)
+    return obj_list
 
 
+def get_obj_input_str(str_dict):
+    str_list = list(str_dict.keys())
+    str_list.append('operation_for')
+    str_list.append('deleted_at')
+    str_list.append('deleted')
+    input_str = ','.join(str_list)
+    return input_str
 
+
+def classfiy_sql_keys(values, lik_list, search_list):
+    lik_ret = dict()
+    search_ret = dict()
+    for key in values.keys():
+        if len(values[key].strip()) > 0:
+            if key in lik_list:
+                lik_ret[key] = values[key]
+            elif key in search_list:
+                search_ret[key] = values[key]
+    return lik_ret, search_ret
+
+
+def get_sql_str(table_name):
+    # Get sql header ,like select * from table_name where 1=1
+    return "select * from %s where 1=1 " % table_name

@@ -1,5 +1,5 @@
+import copy
 from oslo_config import cfg
-from oslo_utils import timeutils
 from oslo_serialization import jsonutils as json
 from oslo_db import exception as db_exception
 from oslo_log import log as logging
@@ -13,7 +13,7 @@ from nca47.db import api as db_api
 from nca47.manager import rpcapi
 from nca47.manager import db_common
 from nca47.api.controllers.v1 import tools
-import copy
+from nca47.tests import test_environment
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -33,6 +33,7 @@ class DNSManager(object):
         self.db_common = db_common.DBCommon.get_instance()
         self.db_api = db_api.get_instance()
         self.rpc_api = rpcapi.DNSManagerAPI.get_instance()
+        self.t_environment = test_environment.TestEnvironment.get_instance()
 
     @classmethod
     def get_instance(cls):
@@ -278,6 +279,30 @@ class DNSManager(object):
             raise exception.IsNotExistError(param_name="Zone with id=" + id)
         return zone_objs
 
+    def get_db_zones(self, context, zones):
+        """Todo call DB to get all zones"""
+        # init the DB operations object
+        zone_obj = objects.DnsZone(context)
+        # Filter the data that has been disabled
+        zone_name_dic = {}
+        zone_name_dic['deleted'] = False
+        # get the like values
+        like_list = ['zone_name', 'owner', 'default_ttl', 'slaves', 'renewal']
+        # get the union values
+        search_list = []
+        # get the run sqlstr
+        lik_dic, search_dic = tools.classfiy_sql_keys(zones, like_list,
+                                                      search_list)
+        # put in the table name
+        sql_str_header = tools.get_sql_str("dns_zone_info")
+        sql_str = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        # run the sqlstr from api
+        zone_objs = zone_obj.get_all_object(context, sql_str)
+        if zone_objs is None:
+            LOG.warning(_LW("There is no data in the dns_zone_info"))
+            raise exception.IsNotExistError(param_name="Zone with id=" + id)
+        return zone_objs
+
     def get_dev_records(self, context, zone_id):
         try:
             response = self.rpc_api.get_records(context, zone_id)
@@ -301,6 +326,32 @@ class DNSManager(object):
         except db_exception as e:
             raise e
         return target
+
+    def query_records(self, context, rrs):
+        zone_name_dic = {}
+        # test_environment begin
+        z = self.t_environment.match(rrs["environment_name"])
+        zone_name_dic['zone_name'] = z
+        # end
+        zone_name_dic['tenant_id'] = rrs["tenant_id"]
+        zone_name_dic['deleted'] = False
+        zone_obj = objects.DnsZone(context, **zone_name_dic)
+        try:
+            target_zone = zone_obj.get_object(context, **zone_name_dic)
+        except Exception:
+            raise exception.IsNotExistError(param_name=rrs["environment_name"])
+        zone_id = target_zone["id"]
+        rrs['deleted'] = "0"
+        rrs["zone_id"] = zone_id
+        like_list = ['rrs_name', 'ttl', "rdata"]
+        search_list = ["type", "deleted", "zone_id"]
+        lik_dic, search_dic = tools.classfiy_sql_keys(
+            rrs, like_list, search_list)
+        sql_str_header = tools.get_sql_str("dns_rrs_info")
+        sql = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        rrs_obj = objects.DnsZoneRrs(context, **rrs)
+        query = rrs_obj.get_all_object(sql)
+        return query
 
     def get_record_from_db(self, context, record_id):
         record_dic = {}
@@ -366,20 +417,40 @@ class DNSManager(object):
                         {"record": record['name']})
             raise exception.HaveSameObject(param_name=record['name'])
         json_name = record['name']
-        zones = self.get_zone_name_bytenant_id(context, record['tenant_id'])
-        if len(zones) == 0:
-            raise exception.IsNotExistError(param_name="tenant_id")
-        flag = True
-        for zone in zones:
-            zone_name = zone["zone_name"]
-            dev_zone_name = '%s%s' % ('.', zone_name)
-            if json_name.endswith(dev_zone_name):
-                zone_id = zone["id"]
-                flag = False
-                break
-        if flag:
-            raise exception.ZoneOfRecordIsError(name=json_name,
-                                                tenant=record['tenant_id'])
+
+        # test environment Begin
+        zone_name = self.t_environment.match(record["environment_name"])
+        dev_zone_name = '%s%s' % ('.', zone_name)
+        if not json_name.endswith(dev_zone_name):
+            exception.ParamValueError(param_name="environment_name")
+        zone_name_dic = {}
+        zone_name_dic['zone_name'] = zone_name
+        zone_name_dic['deleted'] = False
+        zone_obj = objects.DnsZone(context, **zone_name_dic)
+        try:
+            target_zone = zone_obj.get_object(context, **zone_name_dic)
+        except exception:
+            raise exception.IsNotExistError(param_name="environment_name")
+        zone_id = target_zone["id"]
+        # End
+
+        #Production environment Begin
+        #zones = self.get_zone_name_bytenant_id(context, record['tenant_id'])
+        #if len(zones) == 0:
+            #raise exception.IsNotExistError(param_name="tenant_id")
+        #flag = True
+        #for zone in zones:
+            #zone_name = zone["zone_name"]
+            #dev_zone_name = '%s%s' % ('.', zone_name)
+            #if json_name.endswith(dev_zone_name):
+                #zone_id = zone["id"]
+                #flag = False
+                #break
+        #if flag:
+            #raise exception.ZoneOfRecordIsError(name=json_name,
+                                                #tenant=record['tenant_id'])
+        # End
+
         LOG.info(_LI("the zone object with id=%(zone_name)s is existed"),
                  {"zone_name": zone_name})
         record["zone_id"] = zone_id
@@ -775,7 +846,7 @@ class DNSManager(object):
         return response
 
     def get_members(self, context):
-        """Todo call DB to get all regions"""
+        """Todo call DB to get all members"""
         # init the DB operations object
         region_obj = objects.RegionUserInfo(context)
         # Filter the data that has been disabled
@@ -787,6 +858,29 @@ class DNSManager(object):
             LOG.warning(_LW("There is no data in the dns_region_info"))
             raise exception.IsNotExistError(param_name="region with id=" + id)
         return region_objs
+
+    def get_db_members(self, context, members):
+        """Todo call DB to get all members"""
+        # init the DB operations object
+        region_obj = objects.RegionUserInfo(context)
+        # Filter the data that has been disabled
+        members['deleted'] = False
+        # get the like values
+        like_list = ['name', 'data1']
+        # get the union values
+        search_list = ['type']
+        # get the run sqlstr
+        lik_dic, search_dic = tools.classfiy_sql_keys(members, like_list,
+                                                      search_list)
+        # put in the table name
+        sql_str_header = tools.get_sql_str("region_user_info")
+        sql_str = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        # run the sqlstr from api
+        members_objs = region_obj.get_all_object(context, sql_str)
+        if members_objs is None:
+            LOG.warning(_LW("There is no data in the region_user_info"))
+            raise exception.IsNotExistError(param_name="region with id=" + id)
+        return members_objs
 
     def delete_region(self, context, id):
         """
@@ -918,6 +1012,29 @@ class DNSManager(object):
             LOG.warning(_LW("There is no data in the dns_region_info"))
             raise exception.IsNotExistError(param_name="region with id=" + id)
         return region_objs
+
+    def get_db_regions(self, context, regions):
+        """Todo call DB to get all regions"""
+        # init the DB operations object
+        region_obj = objects.RegionInfo(context)
+        # Filter the data that has been disabled
+        regions['deleted'] = False
+        # get the like values
+        like_list = ['name']
+        # get the union values
+        search_list = []
+        # get the run sqlstr
+        lik_dic, search_dic = tools.classfiy_sql_keys(regions, like_list,
+                                                      search_list)
+        # put in the table name
+        sql_str_header = tools.get_sql_str("region_info")
+        sql_str = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        # run the sqlstr from api
+        regions_objs = region_obj.get_all_object(context, sql_str)
+        if regions_objs is None:
+            LOG.warning(_LW("There is no data in the dns_region_info"))
+            raise exception.IsNotExistError(param_name="region with id=" + id)
+        return regions_objs
 
     def create_sp_policy(self, context, proximity):
         """
@@ -1100,8 +1217,46 @@ class DNSManager(object):
             raise exception.IsNotExistError(param_name="proximity id=" + id)
         return proximity_objs
 
+    def get_db_proximitys(self, context, proximitys):
+        """Todo call DB to get all proximitys"""
+        # init the DB operations object
+        proximity_obj = objects.ProximityInfo(context)
+        # Filter the data that has been disabled
+        proximitys['deleted'] = False
+        # get the like values
+        like_list = ['src_data1', 'dst_data1']
+        # get the union values
+        search_list = ['src_type', 'src_logic', 'dst_type', 'dst_logic']
+        # get the run sqlstr
+        lik_dic, search_dic = tools.classfiy_sql_keys(proximitys, like_list,
+                                                      search_list)
+        # put in the table name
+        sql_str_header = tools.get_sql_str("sp_policy_info")
+        sql_str = self.db_common.put_sql(sql_str_header, lik_dic,
+                                                search_dic)
+        # run the sqlstr from api
+        proximitys_objs = proximity_obj.get_all_object(context, sql_str)
+        if proximitys_objs is None:
+            LOG.warning(_LW("There is no data in the dns_proximity_info"))
+            raise exception.IsNotExistError(param_name="proximity id=" + id)
+        return proximitys_objs
+
     # operation gmembers
-    def get_gmembers_db(self, context):
+    def get_gmembers_db(self, context, dic):
+        """get all gmembers"""
+        obj = objects.HmTemplate(context)
+        dic['deleted'] = "0"
+        like_list = ['name', 'gslb_zone_name', 'ip']
+        search_list = ["tenant_id", "port", "enable", "deleted"]
+        lik_dic, search_dic = tools.classfiy_sql_keys(
+            dic, like_list, search_list)
+        sql_str_header = tools.get_sql_str("gmember_info")
+        sql = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        query = obj.get_all_object(sql)
+        return query
+
+    # operation gmembers
+    def get_gmembers_db_restful(self, context):
         """get all gmembers"""
         gmember_kwarg = {}
         gmember_kwarg["deleted"] = False
@@ -1133,12 +1288,11 @@ class DNSManager(object):
         gslb_zone_kwarg["tenant_id"] = dic["tenant_id"]
         gslb_zone_kwarg["name"] = dic["gslb_zone_name"]
         gslb_zone_kwarg["deleted"] = False
+
         try:
             instance = objects.GslbZone(context, **gslb_zone_kwarg)
-            get_gslb_zone = instance.get_object(context, **gslb_zone_kwarg)
-        except Exception:
-            get_gslb_zone = None
-        if get_gslb_zone is None:
+            instance.get_object_one(context, **gslb_zone_kwarg)
+        except Exception as e:
             raise exception.IsNotExistError(param_name=dic["gslb_zone_name"])
         gmember_kwarg = {}
         gmember_kwarg["tenant_id"] = dic["tenant_id"]
@@ -1287,7 +1441,20 @@ class DNSManager(object):
                                                 **history_kwargs)
         return response_dev
 
-    def get_hm_templates_db(self, context):
+    def get_hm_templates_db(self, context, dic):
+        """get all hm_templates"""
+        obj = objects.HmTemplate(context)
+        dic['deleted'] = "0"
+        like_list = ['name']
+        search_list = ["tenant_id", "deleted"]
+        lik_dic, search_dic = tools.classfiy_sql_keys(
+            dic, like_list, search_list)
+        sql_str_header = tools.get_sql_str("hm_template_info")
+        sql = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        query = obj.get_all_object(sql)
+        return query
+
+    def get_hm_templates_db_restful(self, context):
         """get all hm_templates"""
         hm_template_kwarg = {}
         hm_template_kwarg["deleted"] = False
@@ -1555,7 +1722,6 @@ class DNSManager(object):
         target = None
         try:
             target = Syngroup_obj.get_object(context, **name_dic)
-            # print"Syngroup_obj_db_detail", target.__dict__
         except Exception:
             LOG.warning(_LW("No Syngroup with id = %(id)s in DB"), {"id": id})
             raise exception.IsNotExistError(
@@ -1617,8 +1783,10 @@ class DNSManager(object):
         gpool_db_update_ret_obj = self._replace_pass(gpool_db_update_ret_obj)
         return gpool_db_update_ret_obj
 
-    def update_gpool(self, context, gpool_dict, id):
+    def update_gpool(self, context, gpool_dict):
         # update gpool
+        id = gpool_dict['id']
+        del gpool_dict['id']
         gpool_db_org_obj = self._get_gpool_db_detail(context, id)
         gpool_db_dict = copy.deepcopy(gpool_dict)
         if 'pass' in gpool_db_dict.keys():
@@ -1663,8 +1831,9 @@ class DNSManager(object):
         gpool_db_update_ret_obj = self._replace_pass(gpool_db_update_ret_obj)
         return gpool_db_update_ret_obj
 
-    def delete_gpool(self, context, id):
+    def delete_gpool(self, context, values):
         # delete gpool
+        id = values['id']
         gpool_db_org_obj = self._get_gpool_db_detail(context, id)
         gpool_db_del_obj = objects.DnsGPool(context)
         operation_str = json.dumps({})
@@ -1699,24 +1868,35 @@ class DNSManager(object):
         return {"result": "success"}
 
     def get_gpool(self, context, id):
-        # get gpool
+        # get gpool not use
         gpool_obj = self._get_gpool_db_detail(context, id)
         gpool_obj = self._replace_pass(gpool_obj)
         return gpool_obj
 
-    def get_db_gpools(self, context):
-        # get gpools
+    def get_gpools(self, context, values):
+        # list gpools
         gpool_obj = objects.DnsGPool(context)
-        name_dic = {}
-        name_dic['deleted'] = False
-        gpool_objs = gpool_obj.get_objects(context, **name_dic)
-        if gpool_objs is None:
-            LOG.warning(_LW("There is no data in the SYNGROUP_INFO"))
-            raise exception.IsNotExistError(
-                param_name="GPoll_info table is Null")
-        result = []
-        for gpool_obj in gpool_objs:
-            result.append(self._replace_pass(gpool_obj))
+        name_dic = values
+        name_dic['deleted'] = '0'
+        like_list = [
+            'name',
+            'cname',
+            'hms',
+            'gmember_list', 'ttl'
+        ]
+        search_list = [
+            'tenant_id',
+            'enable',
+            'warning',
+            'deleted',
+            'first_algorithm',
+            'second_algorithm',
+        ]
+        lik_dic, search_dic = tools.classfiy_sql_keys(
+            name_dic, like_list, search_list)
+        sql_str_header = tools.get_sql_str("gpool_info")
+        sql_str = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        gpool_objs = gpool_obj.get_objects(context, sql_str)
         return gpool_objs
 
     def _get_gpool_db_detail(self, context, id):
@@ -1782,12 +1962,12 @@ class DNSManager(object):
         )
         return gmap_db_update_ret_obj
 
-    def update_gmap(self, context, gmap_dict, id):
+    def update_gmap(self, context, gmap_dict):
         # update gmap
+        id = gmap_dict['id']
+        del gmap_dict['id']
         gmap_db_org_obj = self._get_gmap_db_detail(context, id)
-        gmap_db_dict = gmap_dict
-        # if 'gpool_list' in gmap_db_dict.keys():
-        #     gmap_db_dict["gpool_list"] = str(gmap_db_dict['gpool_list'])
+        gmap_db_dict = copy.deepcopy(gmap_dict)
         gmap_db_update_obj = objects.DnsGMap(context, **gmap_db_dict)
         history_str = json.dumps(gmap_db_dict)
         operation_history_dict = {}
@@ -1800,7 +1980,7 @@ class DNSManager(object):
         gmap_db_update_ret_obj = gmap_db_update_obj.update(
             context, id, gmap_db_update_obj.as_dict())
         try:
-            gmap_rpc_dict = gmap_db_dict
+            gmap_rpc_dict = copy.deepcopy(gmap_dict)
             gmap_rpc_dict['name'] = gmap_db_org_obj.gmap_id
             response = self.rpc_api.glsb_math(
                 context, gmap_rpc_dict, 'update_gmap'
@@ -1819,8 +1999,9 @@ class DNSManager(object):
         )
         return gmap_db_update_ret_obj
 
-    def delete_gmap(self, context, id):
+    def delete_gmap(self, context, values):
         # delete gmap
+        id = values['id']
         gmap_db_org_obj = self._get_gmap_db_detail(context, id)
         gmap_db_del_obj = objects.DnsGMap(context)
         operation_str = json.dumps({})
@@ -1853,21 +2034,23 @@ class DNSManager(object):
         )
         return {"result": "success"}
 
-    def get_gmap(self, context, id):
-        # get gmap
-        gmap_obj = self._get_gmap_db_detail(context, id)
-        return gmap_obj
+    # def get_gmap(self, context, id):
+    #     # get gmap
+    #     gmap_obj = self._get_gmap_db_detail(context, id)
+    #     return gmap_obj
 
-    def get_db_gmaps(self, context):
+    def get_gmaps(self, context, values):
         # list gmaps
         gmap_obj = objects.DnsGMap(context)
-        name_dic = {}
-        name_dic['deleted'] = False
-        gmap_objs = gmap_obj.get_objects(context, **name_dic)
-        if gmap_objs is None:
-            LOG.warning(_LW("There is no data in the SYNGROUP_INFO"))
-            raise exception.IsNotExistError(
-                param_name="GPoll_info table is Null")
+        name_dic = values
+        name_dic['deleted'] = '0'
+        like_list = ['name', 'gpool_list']
+        search_list = ['tenant_id', 'algorithm', 'deleted', 'enable']
+        lik_dic, search_dic = tools.classfiy_sql_keys(
+            name_dic, like_list, search_list)
+        sql_str_header = tools.get_sql_str("gmap_info")
+        sql_str = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        gmap_objs = gmap_obj.get_objects(context, sql_str)
         return gmap_objs
 
     def _get_gmap_db_detail(self, context, id):
@@ -1951,8 +2134,10 @@ class DNSManager(object):
             syngroup_db_update_ret_obj)
         return syngroup_db_update_ret_obj
 
-    def update_syngroup(self, context, syngroup_dict, id):
+    def update_syngroup(self, context, syngroup_dict):
         # update syngroup
+        id = syngroup_dict['id']
+        del syngroup_dict['id']
         syngroup_db_org_obj = self._get_syngroup_db_detail(context, id)
         syngroup_db_dict = copy.deepcopy(syngroup_dict)
         if 'pass' in syngroup_db_dict.keys():
@@ -1998,8 +2183,9 @@ class DNSManager(object):
             syngroup_db_update_ret_obj)
         return syngroup_db_update_ret_obj
 
-    def delete_syngroup(self, context, id):
+    def delete_syngroup(self, context, syngroup_dict):
         # delete syngroup
+        id = syngroup_dict['id']
         syngroup_db_org_obj = self._get_syngroup_db_detail(context, id)
         syngroup_db_del_obj = objects.DnsSyngroup(context)
         operation_str = json.dumps({})
@@ -2034,17 +2220,36 @@ class DNSManager(object):
         return {"result": "success"}
 
     def get_syngroup(self, context, id):
-        # get_one syngroup
+        # get_one syngroup not use
         syngroup_obj = self._get_syngroup_db_detail(context, id)
         syngroup_obj = self._replace_pass(syngroup_obj)
         return syngroup_obj
 
-    def get_db_syngroups(self, context):
-        # get_all_syngroup
+    def get_syngroups(self, context, values):
+        # list syngroups
         syngroup_obj = objects.DnsSyngroup(context)
-        name_dic = {}
-        name_dic['deleted'] = False
-        syngroup_objs = syngroup_obj.get_objects(context, **name_dic)
+        name_dic = values
+        name_dic['deleted'] = '0'
+        like_list = ['name', 'gslb_zone_names']
+        search_list = ['tenant_id', 'probe_range', 'deleted']
+        lik_dic, search_dic = tools.classfiy_sql_keys(
+            name_dic, like_list, search_list)
+        sql_str_header = tools.get_sql_str("syngroup_info")
+        sql_str = self.db_common.put_sql(sql_str_header, lik_dic, search_dic)
+        syngroup_objs = syngroup_obj.get_objects(context, sql_str)
+        # if gmap_objs is None:
+        #     LOG.warning(_LW("There is no data in the SYNGROUP_INFO"))
+        #     raise exception.IsNotExistError(
+        #         param_name="GPoll_info table is Null")
+        return syngroup_objs
+
+    def get_db_syngroups(self, context, values):
+        # get_all_syngroup  not use
+        syngroup_obj = objects.DnsSyngroup(context)
+        syngroup_db_search_dict = values
+        syngroup_db_search_dict['deleted'] = False
+        syngroup_objs = syngroup_obj.get_objects(
+            context, **syngroup_db_search_dict)
         if syngroup_objs is None:
             LOG.warning(_LW("There is no data in the SYNGROUP_INFO"))
             raise exception.IsNotExistError(

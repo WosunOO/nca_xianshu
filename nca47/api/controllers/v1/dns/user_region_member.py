@@ -101,10 +101,16 @@ class RegionMemberController(base.BaseRestController):
         # get the context
         context = req.context
         try:
+            # get the body
+            values = {}
+            values.update(kwargs)
             LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                      {"args": args, "kwargs": kwargs})
+            # check the in values
+            valid_attributes = ['tenant_id']
+            recom_msg = self.validat_parms(values, valid_attributes)
             # from db server get the get_members in db
-            members = self.manager.get_members(context)
+            members = self.manager.get_db_members(context, recom_msg)
             LOG.info(_("Return get_members JSON is %(members)s !"),
                      {"members": members})
         except Nca47Exception as e:

@@ -137,10 +137,16 @@ class ProximityController(base.BaseRestController):
         # get the context
         context = req.context
         try:
+            # get the body
+            values = {}
+            values.update(req.GET)
             LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                      {"args": args, "kwargs": kwargs})
+            # check the in values
+            valid_attributes = ['tenant_id']
+            recom_msg = self.validat_parms(values, valid_attributes)
             # from rpc server get the proximitys in device
-            proximitys = self.manager.get_all_db_proximity(context)
+            proximitys = self.manager.get_db_proximitys(context, recom_msg)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))

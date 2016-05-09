@@ -8,7 +8,7 @@ from oslo_utils import uuidutils
 from nca47.common import exception
 from nca47.db import api
 from nca47.api.controllers.v1 import tools
-
+from oslo_serialization import jsonutils as json
 LOG = log.getLogger(__name__)
 
 _CONTEXT = threading.local()
@@ -73,8 +73,6 @@ class Connection(api.Connection):
             db_obj = model(**values)
             beginSession(session)
             try:
-                import pdb
-                pdb.set_trace()
                 session.add(db_obj)
                 session.flush()
                 session.commit()
@@ -131,22 +129,16 @@ class Connection(api.Connection):
                 raise exception.DBError(param_name="UPDATE")
         return query
 
-    def get_all_object(self, model, input_str, str_sql):
-        with _session_for_write() as session:
-            import pdb
-            pdb.set_trace()
+    def get_all_object(self, model, str_sql):
+        with _session_for_read() as session:
             beginSession(session)
             try:
-                connect = session.connect()
-                result = connect.execute(str_sql)
-#                 result = cur.fetchmany(str_len)
-#                 cur.close()
-                session.flush()
-                session.commit()
+                connect = session.connection()
+                result_obj = connect.execute(str_sql)
+                keys = result_obj.keys()
+                values = result_obj.fetchall()
             except Exception as e:
-#                 cur.close()
-                session.rollback()
                 LOG.exception(e)
                 raise exception.DBError(param_name="get_all")
-        obj_dic = tools.get_obj_list(str_sql, input_str, result)
+        obj_dic = tools.get_obj_list(keys, values)
         return obj_dic

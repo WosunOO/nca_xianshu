@@ -1,5 +1,7 @@
 from nca47.api.controllers.v1 import base, tools as tool
 from nca47.common.exception import BadRequest
+from nca47.common.exception import ParamNull
+from nca47.common.exception import NonExistParam
 from nca47.common.exception import Nca47Exception
 from nca47.common.exception import ParamValueError
 from nca47.common.i18n import _, _LE
@@ -24,8 +26,8 @@ class DnsHmTemplateController(base.BaseRestController):
                        "kwargs is %(kwargs)s"),
                      {"json": req.body, "args": args, "kwargs": kwargs})
             url = req.url
-            if len(args) != 0:
-                raise BadRequest(resource="hm_template create", msg=url)
+            # if len(args) != 0:
+            #     raise BadRequest(resource="hm_template create", msg=url)
             array1 = ["tenant_id", "name", "types"]
             array2 = ["check_interval", "timeout", "max_retries"]
             # get the body
@@ -62,8 +64,11 @@ class DnsHmTemplateController(base.BaseRestController):
             # if len(args) != 1:
             #     raise BadRequest(resource="hm template update", msg=url)
             dic = json.loads(req.body)
+            dic['id'] = id
             c = req.context
-            response = self.manager.update_hm_template(c, dic, id)
+            if not tool.is_not_nil(dic['id']):
+                raise ParamNull(param_name="id")
+            response = self.manager.update_hm_template(c, dic, dic['id'])
             LOG.info(_("Return of update hm template JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -91,11 +96,16 @@ class DnsHmTemplateController(base.BaseRestController):
                        "kwargs is %(kwargs)s"),
                      {"json": req.body, "args": args, "kwargs": kwargs})
             url = req.url
-            # if len(args) != 1:
-            #     raise BadRequest(resource="hm template remove", msg=url)
+            if len(args) != 1:
+                raise BadRequest(resource="hm template remove", msg=url)
+            dic = {}
+            dic.update(kwargs)
+            dic['id'] = id
             c = req.context
             """from rpc server delete the hm template"""
-            response = self.manager.delete_hm_template(c, id)
+            if not tool.is_not_nil(dic['id']):
+                raise ParamNull(param_name="id")
+            response = self.manager.delete_hm_template(c, dic['id'])
             LOG.info(_("Return of remove hm template JSON  is %(response)s !"),
                      {"response": response})
             return response
@@ -157,7 +167,17 @@ class DnsHmTemplateController(base.BaseRestController):
             # if len(args) != 0:
             #     raise BadRequest(resource="hm template query all", msg=url)
             context = req.context
-            response = self.manager.get_hm_templates_db(context)
+            dic = {}
+            dic.update(kwargs)
+            list_ = ["tenant_id"]
+            key = dic.keys()
+            for val in list_:
+                if val not in key:
+                    raise NonExistParam(param_name=val)
+            if not tool.is_not_nil(dic['tenant_id']):
+                raise ParamNull(param_name="tenant_id")
+            # from db server show the zone_records
+            response = self.manager.get_hm_templates_db(context, dic)
             LOG.info(_("Return of get all hm template JSON is %(response)s !"),
                      {"response": response})
             return response

@@ -46,6 +46,7 @@ class FirewallManager(object):
         corresponding method to send messaging to agent endpoints
         """
         # operation veiw
+        dic['agent_type'] = 'FW'
         kw = self.db_common.merge_dict_view(dic)
         view = self.db_common.get_vres_agent_view(context, **kw)
         # tenant_id is or not exist
@@ -72,8 +73,9 @@ class FirewallManager(object):
         dic["vres_id"] = vres_id
         dic["vlan_id"] = vlanid
         vlan_obj = objects.FwVlanInfo(context, **dic)
+        self.rpc_api.reload_topic(view['agent_ip'])
         try:
-            self.rpc_api.create_vlan(context, dict(view), dic)
+            self.rpc_api.create_vlan(context, dic)
         except Exception as e:
             raise
         res = self.db_common.create_in_storage(context, vlan_obj)
@@ -86,6 +88,7 @@ class FirewallManager(object):
         delete a vlan handling DB operations and  calling rpc client's
         corresponding method to send messaging to agent endpoints
         """
+        dic['agent_type'] = 'FW'
         kw = self.db_common.merge_dict_view(dic)
         view = self.db_common.get_vres_agent_view(context, **kw)
         # tenant_id is or not exist
@@ -125,6 +128,7 @@ class FirewallManager(object):
         if ifnames_len == 0:
             vlan_obj = objects.FwVlanInfo(context, **response)
             response = vlan_obj.delete(context, response["id"])
+        self.rpc_api.reload_topic(view['agent_ip'])
         # try:
         # response_fw = self.rpc_api.del_vlan(context, id_, vlan_infos)
         # except Exception as e:
@@ -158,6 +162,7 @@ class FirewallManager(object):
         get all vlans handling DB operations and  calling rpc client's
         corresponding method to send messaging to agent endpoints
         """
+        dic['agent_type'] = 'FW'
         kw = self.db_common.merge_dict_view(dic)
         view = self.db_common.get_vres_agent_view(context, **kw)
         # tenant_id is or not exist
@@ -176,6 +181,7 @@ class FirewallManager(object):
         create a netservice handling DB operations and  calling rpc client's
         corresponding method to send messaging to agent endpoints
         """
+        dic['agent_type'] = 'FW'
         kw = self.db_common.merge_dict_view(dic)
         view = self.db_common.get_vres_agent_view(context, **kw)
         # tenant_id is or not exist
@@ -212,6 +218,7 @@ class FirewallManager(object):
         dic["vfwname"] = vfwname
         netserv_obj = objects.FwNetservicesInfo(context, **dic)
         res = netserv_obj.create(context, netserv_obj.as_dict())
+        self.rpc_api.reload_topic(view['agent_ip'])
         # response_fw = self.rpc_api.creat_netservice(context, netsev_infos)
         self.db_common.update_operation_history(context, history.id,
                                                 status='SUCCESS')
@@ -222,6 +229,7 @@ class FirewallManager(object):
         delete a netservice handling DB operations and  calling rpc client's
         corresponding method to send messaging to agent endpoints
         """
+        dic['agent_type'] = 'FW'
         kw = self.db_common.merge_dict_view(dic)
         view = self.db_common.get_vres_agent_view(context, **kw)
         # tenant_id is or not exist
@@ -246,6 +254,7 @@ class FirewallManager(object):
             raise exception.IsNotExistError(param_name=uuid)
         netserv_obj = objects.FwNetservicesInfo(context, **dic)
         response = netserv_obj.delete(context, uuid)
+        self.rpc_api.reload_topic(view['agent_ip'])
         # try:
         # response_fw = self.rpc_api.del_netservice(context, id_,
         #                                          netsev_infos)
@@ -279,6 +288,7 @@ class FirewallManager(object):
         get all netservices handling DB operations and  calling rpc client's
         corresponding method to send messaging to agent endpoints
         """
+        dic['agent_type'] = 'FW'
         kw = self.db_common.merge_dict_view(dic)
         view = self.db_common.get_vres_agent_view(context, **kw)
         # tenant_id is or not exist
@@ -346,6 +356,7 @@ class FirewallManager(object):
         addrobj = objects.FwAddrObjInfo(context, **merge_dict)
         # create the addrobj info in db
         result = self.db_common.create_in_storage(context, addrobj)
+        self.rpc_api.reload_topic(vres_agent_obj['agent_ip'])
         # response_fw = self.rpc_api.add_addrobj(context, addrobj_infos)
         input_operation_history['status'] = 'SUCCESS'
         self.db_common.update_operation_history(
@@ -378,6 +389,7 @@ class FirewallManager(object):
         addrobj_infos = dict(addrobj_infos)
         addrobj = objects.FwAddrObjInfo(context, **addrobj_infos)
         result = addrobj.delete(context, addrobj_infos['id'])
+        self.rpc_api.reload_topic(vres_agent_obj['agent_ip'])
         # response_fw = self.rpc_api.del_addrobj(context, addrobj_infos)
         input_operation_history['status'] = 'SUCCESS'
         self.db_common.update_operation_history(
@@ -503,6 +515,7 @@ class FirewallManager(object):
         snataddrpool = objects.FwSnatAddrPoolInfo(context, **merge_dict)
         # create the snataddrpool info in db
         result = self.db_common.create_in_storage(context, snataddrpool)
+        self.rpc_api.reload_topic(vres_agent_obj['agent_ip'])
         # response_fw = self.rpc_api.add_snataddrpool(context,
         # snataddrpool_infos)
         input_operation_history['status'] = 'SUCCESS'
@@ -537,6 +550,7 @@ class FirewallManager(object):
         snataddrpool = objects.FwSnatAddrPoolInfo(context,
                                                   **snataddrpool_infos)
         result = snataddrpool.delete(context, snataddrpool_infos['id'])
+        self.rpc_api.reload_topic(vres_agent_obj['agent_ip'])
         # response_fw = self.rpc_api.del_snataddrpool(context,
         # snataddrpool_infos)
         input_operation_history['status'] = 'SUCCESS'
@@ -643,7 +657,7 @@ class FirewallManager(object):
         if self.db_common.is_exist_object(context, check_vfw_obj):
             raise exception.HaveSameObject(param_name=check_vfw_obj.vfw_name)
         response_vfw = self.db_common.create_in_storage(context, vfw_obj)
-
+        self.rpc_api.reload_topic(view_obj['agent_ip'])
         # todo list - rpc call
         self.db_common.update_operation_history(context, history.id,
                                                 status='SUCCESS')
@@ -675,6 +689,7 @@ class FirewallManager(object):
             raise exception.IsNotExistError(param_name="vfw with id=" +
                                             vfw_dic['id'])
         response_vfw = vfw_obj.delete(context, vfw['id'])
+        self.rpc_api.reload_topic(view_obj['agent_ip'])
         # todo list - rpc call
         self.db_common.update_operation_history(context, history.id,
                                                 status='SUCCESS')
@@ -750,6 +765,7 @@ class FirewallManager(object):
         if self.db_common.is_exist_object(context, check_dnat_obj):
             raise exception.HaveSameObject(param_name=check_dnat_obj.name)
         response_dnat = self.db_common.create_in_storage(context, dnat_obj)
+        self.rpc_api.reload_topic(view_obj['agent_ip'])
 
         # todo list - rpc call
         self.db_common.update_operation_history(context, history.id,
@@ -884,7 +900,7 @@ class FirewallManager(object):
         if self.db_common.is_exist_object(context, checkpacketfilter):
             raise exception.HaveSameObject(param_name=checkpacketfilter.name)
         response = self.db_common.create_in_storage(context, packetfilter_obj)
-
+        self.rpc_api.reload_topic(view_obj['agent_ip'])
         # todo list - rpc call
         self.db_common.update_operation_history(context, history.id,
                                                 status='SUCCESS')
@@ -918,6 +934,7 @@ class FirewallManager(object):
             raise exception.IsNotExistError(param_name="packetfilter"
                                             " with id=" + packetfilter['id'])
         response = packetfilter_obj.delete(context, packetfilter['id'])
+        self.rpc_api.reload_topic(view_obj['agent_ip'])
         # todo list - rpc call
         self.db_common.update_operation_history(context, history.id,
                                                 status='SUCCESS')
@@ -1029,6 +1046,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_Vrf_Object(context, **fw_object)
         # create the vrf info in db
         result = self.db_common.create_in_storage(context, fw_obj)
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')
@@ -1059,6 +1077,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_Vrf_Object(context, **fw_object)
         # del the vrf info in db
         result = fw_obj.delete(context, fw_object["id"])
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')
@@ -1196,6 +1215,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_Snat_Object(context, **fw_object)
         # create the snat info in db
         result = self.db_common.create_in_storage(context, fw_obj)
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')
@@ -1227,6 +1247,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_Snat_Object(context, **fw_object)
         # del the snat info in db
         result = fw_obj.delete(context, fw_object["id"])
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')
@@ -1328,6 +1349,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_SecurityZone_Object(context, **fw_object)
         # create the securityZone info in db
         result = self.db_common.create_in_storage(context, fw_obj)
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')
@@ -1359,6 +1381,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_SecurityZone_Object(context, **fw_object)
         # create the staticnat info in db
         result = fw_obj.update(context, fw_object['id'], fw_object)
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')
@@ -1404,6 +1427,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_SecurityZone_Object(context, **fw_object)
         # del the securityZone info in db
         result = fw_obj.delete(context, fw_object["id"])
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')
@@ -1503,6 +1527,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_Staticnat_Object(context, **fw_object)
         # create the staticnat info in db
         result = self.db_common.create_in_storage(context, fw_obj)
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')
@@ -1534,6 +1559,7 @@ class FirewallManager(object):
         fw_obj = objects.FW_Staticnat_Object(context, **fw_object)
         # del the staticnat info in db
         result = fw_obj.delete(context, fw_object["id"])
+        self.rpc_api.reload_topic(revs_agent['agent_ip'])
         # response_fw = self.rpc_api.creat_addrobj(context, addrobj_infos)
         self.db_common.update_operation_history(
             context, history.id, status='SUCCESS')

@@ -165,10 +165,16 @@ class DnsZonesController(base.BaseRestController):
                 # from rpc server get the zones in device
                 zones = self.manager.get_zones(context)
             else:
+                # get the body
+                values = {}
+                values.update(kwargs)
                 LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                          {"args": args, "kwargs": kwargs})
+                # check the in values
+                valid_attributes = ['tenant_id']
+                recom_msg = self.validat_parms(values, valid_attributes)
                 # from rpc server get the zones in db
-                zones = self.manager.get_all_db_zone(context)
+                zones = self.manager.get_db_zones(context, recom_msg)
                 LOG.info(_("Return of get_all_db_zone JSON is %(zones)s !"),
                          {"zones": zones})
         except Nca47Exception as e:

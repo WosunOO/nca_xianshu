@@ -45,9 +45,8 @@ class DnsGMapController(base.BaseRestController):
                 'tenant_id',
                 'name',
             ]
-            self.check_ava(valid_attrbutes, values)
             # recom_msg = self.validat_create(values, valid_attrbutes)
-            self.check_ava(valid_attrbutes, values)
+            self.check_create(valid_attrbutes, values)
             LOG.info(_('the in value body is %(body)s'), {'body': values})
             gmaps = self.manager.create_gmap(context, values)
         except Nca47Exception as e:
@@ -76,16 +75,11 @@ class DnsGMapController(base.BaseRestController):
         context = req.context
         try:
             values = json.loads(req.body)
+            values['id'] = id
             url = req.url
-            valid_attrbutes = [
-                'enable',
-                'algorithm',
-                'last_resort_pool',
-                'gpool_list',
-            ]
-            self.check_update(valid_attrbutes, values)
+            self.check_update(values)
             LOG.info(_('the in value body is %(body)s'), {'body': values})
-            gmaps = self.manager.update_gmap(context, values, id)
+            gmaps = self.manager.update_gmap(context, values)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE("Error exception ! error info:%" + e.message))
@@ -112,10 +106,11 @@ class DnsGMapController(base.BaseRestController):
         context = req.context
         try:
             url = req.url
-            # LOG.info(_("The in value body is %(body)s"),{"body",values})
-            LOG.info(_("The id is %(id)s"), {"id": id})
-            recom_msg = {}
-            syngroup = self.manager.delete_gmap(context, id)
+            values = json.loads(req.body)
+            values['id'] = id
+            self.check_remove(values)
+            LOG.info(_('the in value body is %(body)s'), {'body': values})
+            gmap = self.manager.delete_gmap(context, values)
         except Nca47Exception as e:
             LOG.error(_LE('Error exception! error info: %' + e.message))
             LOG.exception(e)
@@ -129,7 +124,7 @@ class DnsGMapController(base.BaseRestController):
             LOG.exception(exception)
             self.response.status = 500
             return tools.ret_info(self.response.status, exception.message)
-        return syngroup
+        return gmap
 
     def list(self, req, *args, **kwargs):
         """
@@ -145,18 +140,14 @@ class DnsGMapController(base.BaseRestController):
         LOG.info(_("search_opts is %s"), search_opts)
         # values = json.loads(req.body)
         try:
-            # if 'device' in args:
-            #     LOG.info(_("args is %(args)s,kwargs is %(kwargs)s"),
-            #              {'args': args, 'kwargs': kwargs})
-            #     zones = self.manager.list_syngroup(context)
-            # else:
             LOG.info(
                 _("args is %(args)s,kwargs is %(kwargs)s"), {
                     'args': args, "kwargs": kwargs})
             self.check_search(search_opts)
-            syngroup = self.manager.get_gmaps(context, search_opts)
-            LOG.info(_("Retrun of get_all_db_zone JSON is %(zones)s !"),
-                     {"syngroup": syngroup})
+            gmap = self.manager.get_gmaps(context, search_opts)
+            gmap = self.get_return_convert(gmap)
+            LOG.info(_("Retrun of get_all_db_zone JSON is %(gmap)s !"),
+                     {"gmap": gmap})
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))
@@ -170,7 +161,7 @@ class DnsGMapController(base.BaseRestController):
             LOG.exception(exception)
             self.response.status = 500
             return tools.ret_info(self.response.status, exception.message)
-        return syngroup
+        return gmap
 
     def show(self, req, id, *args, **kwargs):
         """
@@ -183,7 +174,7 @@ class DnsGMapController(base.BaseRestController):
         context = req.context
         try:
             LOG.info(_("args is %(args)s"), {"args": args})
-            syngroup = self.manager.get_gmap(context, id)
+            gmap = self.manager.get_gmap(context, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))
@@ -197,9 +188,13 @@ class DnsGMapController(base.BaseRestController):
             LOG.exception(exception)
             self.response.status = 500
             return tools.ret_info(self.response.status, exception.message)
-        return syngroup
+        return gmap
 
-    def check_ava(self, lis, dic):
+    def check_remove(self, dic):
+        if 'id' not in dic.keys():
+            raise ParamNull(param_name='id')
+
+    def check_create(self, lis, dic):
         """
         check must exits and values
         :param lis:  is a list ,contain all must exits keys;
@@ -211,7 +206,7 @@ class DnsGMapController(base.BaseRestController):
                 raise NonExistParam(param_name=i)
             if not tools.is_not_nil(dic[i]):
                 raise ParamNull(param_name=i)
-        list1 = [
+        validate_list = [
             "tenant_id",
             "name",
             "enable",
@@ -220,20 +215,52 @@ class DnsGMapController(base.BaseRestController):
             "gpool_list"
         ]
         for key in dic.keys():
-            if key not in list1:
+            if key not in validate_list:
                 raise IllegalParam(param_name=key)
 
-    def check_update(self, lis, dic):
-        if 'tenant_id' in dic.keys():
-            raise NotAllowModify(param_name="tenant_id")
+    def check_update(self, dic):
+        if 'tenant_id' not in dic.keys():
+            raise ParamNull(param_name="tenant_id")
         if 'name' in dic.keys():
             raise NotAllowModify(param_name="name")
+        validate_list = [
+            "tenant_id",
+            'id',
+            'enable',
+            'algorithm',
+            'last_resort_pool',
+            'gpool_list',
+        ]
+        for key in dic.keys():
+            if key not in validate_list:
+                raise IllegalParam(param_name=key)
+        if 'id' not in dic.keys():
+            raise ParamNull(param_name='id')
             # for key in dic.keys():
             #     if key not in lis:
             #         raise NotAllowModify(param_name=key)
 
     def check_search(self, dic):
-        lis = ["tenant_id","name","enable","algorithm","last_resort_pool","gpool_list"]
+        validate_list = [
+            "id",
+            "tenant_id",
+            "name",
+            "enable",
+            "algorithm",
+            "last_resort_pool",
+            "gpool_list"]
         for key in dic.keys():
-            if key not in lis:
+            if key not in validate_list:
                 raise IllegalParam(param_name=key)
+
+    def get_return_convert(self, gmap):
+        for dic in gmap:
+            if 'gpool_list' in dic:
+                if dic['gpool_list'] == "":
+                    dic['gpool_list'] = []
+                else:
+                    try:
+                        dic['gpool_list'] = eval(dic['gpool_list'])
+                    except:
+                        pass
+        return gmap

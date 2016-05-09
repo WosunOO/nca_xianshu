@@ -2,6 +2,7 @@ from nca47.db import api as db_api
 from nca47.db.sqlalchemy.models import Region as RegionModel
 from nca47.objects import base
 from nca47.objects import fields as object_fields
+from nca47.api.controllers.v1 import tools
 
 
 class RegionInfo(base.Nca47Object):
@@ -50,5 +51,9 @@ class RegionInfo(base.Nca47Object):
         return region
 
     def get_objects(self, context, **values):
-        region = self.db_api.get_objects(RegionModel, **values)
-        return region
+        regions = self.db_api.get_objects(RegionModel, **values)
+        return regions
+
+    def get_all_object(self, context, values):
+        regions = self.db_api.get_all_object(RegionModel, values)
+        return regions

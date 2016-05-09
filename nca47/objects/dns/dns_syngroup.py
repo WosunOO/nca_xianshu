@@ -44,10 +44,14 @@ class DnsSyngroup(base.Nca47Object):
         syngroup = self.db_api.get_object(SyngroupModel, **values)
         return syngroup
 
-    def get_objects(self, context, **values):
-        syngroup = self.db_api.get_objects(SyngroupModel, **values)
-        return syngroup
+    # def get_objects(self, context, **values):
+    #     syngroup = self.db_api.get_objects(SyngroupModel, **values)
+    #     return syngroup
 
     def delete(self, context, id):
         syngroup = self.db_api.delete_object(SyngroupModel, id)
+        return syngroup
+
+    def get_objects(self, context, str_sql):
+        syngroup = self.db_api.get_all_object(SyngroupModel, str_sql)
         return syngroup

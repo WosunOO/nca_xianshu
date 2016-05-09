@@ -68,5 +68,5 @@ class Connection(object):
         """Delete an object."""
 
     @abc.abstractmethod
-    def get_all_object(self, model, input_str, str_sql):
+    def get_all_object(self, model, str_sql):
         """search an object"""

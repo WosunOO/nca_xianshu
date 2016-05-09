@@ -2,6 +2,7 @@ from nca47.db import api as db_api
 from nca47.db.sqlalchemy.models import GMapInfo as GMapModel
 from nca47.objects import base
 from nca47.objects import fields as object_fields
+from nca47.api.controllers.v1 import tools
 
 
 class DnsGMap(base.Nca47Object):
@@ -33,7 +34,6 @@ class DnsGMap(base.Nca47Object):
         return dns_gmap
 
     def create(self, context, values):
-        print values
         gmap = self.db_api.create(GMapModel, values)
         return gmap
 
@@ -45,10 +45,14 @@ class DnsGMap(base.Nca47Object):
         gmap = self.db_api.get_object(GMapModel, **values)
         return gmap
 
-    def get_objects(self, context, **values):
-        gmap = self.db_api.get_objects(GMapModel, **values)
-        return gmap
+    # def get_objects(self, context, **values):
+    #     gmap = self.db_api.get_objects(GMapModel, **values)
+    #     return gmap
 
     def delete(self, context, id):
         gmap = self.db_api.delete_object(GMapModel, id)
+        return gmap
+
+    def get_objects(self, context, str_sql):
+        gmap = self.db_api.get_all_object(GMapModel, str_sql)
         return gmap

@@ -51,10 +51,14 @@ class DnsGPool(base.Nca47Object):
         gpool = self.db_api.get_object(GPoolModel, **values)
         return gpool
 
-    def get_objects(self, context, **values):
-        gpool = self.db_api.get_objects(GPoolModel, **values)
-        return gpool
+    # def get_objects(self, context, **values):
+    #     gpool = self.db_api.get_objects(GPoolModel, **values)
+    #     return gpool
 
     def delete(self, context, id):
         gpool = self.db_api.delete_object(GPoolModel, id)
+        return gpool
+
+    def get_objects(self, context, str_sql):
+        gpool = self.db_api.get_all_object(GPoolModel, str_sql)
         return gpool

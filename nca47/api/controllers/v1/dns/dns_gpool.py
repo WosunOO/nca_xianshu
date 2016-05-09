@@ -28,22 +28,6 @@ class DnsGPoolController(base.BaseRestController):
     def __init__(self):
         self.manager = central.CentralManager.get_instance()
         super(DnsGPoolController, self).__init__(self)
-        self.available_list = [
-            "tenant_id",
-            "name",
-            "gpool_id",
-            "gmember_list",
-            "max_addr_ret",
-            "second_algorithm",
-            "ttl",
-            "fallback_ip",
-            "refcnt",
-            "hms",
-            "warning",
-            "enable",
-            "cname",
-            "pass",
-            "first_algorithm"]
 
     def create(self, req, *args, **kwargs):
         """
@@ -57,14 +41,8 @@ class DnsGPoolController(base.BaseRestController):
         try:
             values = json.loads(req.body)
             url = req.url
-            valid_attrbutes = [
-                "tenant_id",
-                "name",
-                "enable",
-                "ttl",
-            ]
             # recom_msg = self.validat_create(values, valid_attrbutes)
-            self.check_ava(valid_attrbutes, values)
+            self.check_create(values)
             LOG.info(_('the in value body is %(body)s'), {'body': values})
             gpools = self.manager.create_gpool(context, values)
         except Nca47Exception as e:
@@ -82,7 +60,7 @@ class DnsGPoolController(base.BaseRestController):
             return tools.ret_info(self.response.status, e.message)
         return gpools
 
-    def update(self, req, *args, **kwargs):
+    def update(self, req, id, *args, **kwargs):
         """
         update GPool method
         :param req:
@@ -93,11 +71,12 @@ class DnsGPoolController(base.BaseRestController):
         context = req.context
         try:
             values = json.loads(req.body)
+            values['id'] = id
             url = req.url
             self.check_update(values)
             # recom_msg = self.validat_update(values, valid_attrbutes)
             LOG.info(_('the in value body is %(body)s'), {'body': values})
-            gpools = self.manager.update_gpool(context, values, args[0])
+            gpools = self.manager.update_gpool(context, values)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE("Error exception ! error info:%" + e.message))
@@ -125,10 +104,13 @@ class DnsGPoolController(base.BaseRestController):
         context = req.context
         try:
             url = req.url
-            # LOG.info(_("The in value body is %(body)s"),{"body",values})
-            LOG.info(_("The id is %(id)s"), {"id": id})
+            values = {}
+            values.update(kwargs)
+            values['id'] = id
+            self.check_update(values)
+            LOG.info(_('the in value body is %(body)s'), {'body': values})
             recom_msg = {}
-            syngroup = self.manager.delete_gpool(context, id)
+            gmap = self.manager.delete_gpool(context, values)
         except Nca47Exception as e:
             LOG.error(_LE('Error exception! error info: %' + e.message))
             LOG.exception(e)
@@ -142,7 +124,7 @@ class DnsGPoolController(base.BaseRestController):
             LOG.exception(exception)
             self.response.status = 500
             return tools.ret_info(self.response.status, exception.message)
-        return syngroup
+        return gmap
 
     def list(self, req, *args, **kwargs):
         """
@@ -163,9 +145,10 @@ class DnsGPoolController(base.BaseRestController):
             LOG.info(
                 _("args is %(args)s,kwargs is %(kwargs)s"), {
                     'args': args, "kwargs": kwargs})
-            syngroup = self.manager.get_gpools(context, search_opts)
-            LOG.info(_("Retrun of get_all_db_zone JSON is %(zones)s !"),
-                     {"syngroup": syngroup})
+            gpools = self.manager.get_gpools(context, search_opts)
+            gpools = self.get_return_convert(gpools)
+            LOG.info(_("Retrun of get_all_db_zone JSON is %(gpool)s !"),
+                     {"gpool": gpools})
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))
@@ -179,7 +162,7 @@ class DnsGPoolController(base.BaseRestController):
             LOG.exception(exception)
             self.response.status = 500
             return tools.ret_info(self.response.status, exception.message)
-        return syngroup
+        return gpools
 
     def show(self, req, id, *args, **kwargs):
         """
@@ -193,7 +176,7 @@ class DnsGPoolController(base.BaseRestController):
         context = req.context
         try:
             LOG.info(_("args is %(args)s"), {"args": args})
-            syngroup = self.manager.get_gpool(context, id)
+            gmap = self.manager.get_gpool(context, id)
         except Nca47Exception as e:
             self.response.status = e.code
             LOG.error(_LE('Error exception! error info: %' + e.message))
@@ -207,13 +190,15 @@ class DnsGPoolController(base.BaseRestController):
             LOG.exception(exception)
             self.response.status = 500
             return tools.ret_info(self.response.status, exception.message)
-        return syngroup
+        return gmap
 
     def check_update(self, dic):
-        if 'tenant_id' in dic.keys():
-            raise NotAllowModify(param_name="tenant_id")
+        if 'tenant_id' not in dic.keys():
+            raise ParamNull(param_name="tenant_id")
         if 'name' in dic.keys():
             raise NotAllowModify(param_name="name")
+        if 'gpool_id' in dic.keys():
+            raise NotAllowModify(param_name="gpool_id")
         try:
             if 'ttl' in dic.keys():
                 int(dic['ttl'])
@@ -222,24 +207,58 @@ class DnsGPoolController(base.BaseRestController):
         if 'enable' in dic.keys():
             if dic['enable'] not in ['yes', 'no']:
                 raise ParamValueError(param_name='enable')
+        validate_list = [
+            "tenant_id",
+            'id',
+            'gmember_list',
+            'max_addr_ret',
+            'second_algorithm',
+            'ttl',
+            'fallback_ip',
+            'refcnt',
+            'hms',
+            'warning',
+            'enable',
+            'cname',
+            'pass',
+            'first_algorithm']
         for key in dic.keys():
-            if key not in self.available_list:
+            if key not in validate_list:
                 raise IllegalParam(param_name=key)
+        if 'id' not in dic.keys():
+            raise ParamNull(param_name='id')
 
-    def check_ava(self, lis, dic):
+    def check_create(self, dic):
         """
         check available and must exits
         :param lis:  is a list ,contain all must exits keys;
         :param dic:  is a dict, contain the body give us keys;
         :return:   not return
         """
-        for i in lis:
+        validate_list = ['tenant_id', 'name', 'enable', 'ttl']
+        for i in validate_list:
             if i not in dic.keys():
                 raise NonExistParam(param_name=i)
-            # if not tools.is_not_nil(dic[i]):
-            #     raise ParamValueError(param_name=i)
+                # if not tools.is_not_nil(dic[i]):
+                #     raise ParamValueError(param_name=i)
+        validate_list = [
+            "tenant_id",
+            "name",
+            'gpool_id',
+            'gmember_list',
+            'max_addr_ret',
+            'second_algorithm',
+            'ttl',
+            'fallback_ip',
+            'refcnt',
+            'hms',
+            'warning',
+            'enable',
+            'cname',
+            'pass',
+            'first_algorithm']
         for key in dic.keys():
-            if key not in self.available_list:
+            if key not in validate_list:
                 raise IllegalParam(param_name=key)
         try:
             int(dic['ttl'])
@@ -249,98 +268,47 @@ class DnsGPoolController(base.BaseRestController):
             raise ParamValueError(param_name='enable')
 
     def check_search(self, dic):
+        validate_list = [
+            'id',
+            "tenant_id",
+            "name",
+            'gpool_id',
+            'gmember_list',
+            'max_addr_ret',
+            'second_algorithm',
+            'ttl',
+            'fallback_ip',
+            'refcnt',
+            'hms',
+            'warning',
+            'enable',
+            'cname',
+            'pass',
+            'first_algorithm']
         for key in dic.keys():
-            if key not in self.available_list:
+            if key not in validate_list:
                 raise IllegalParam(param_name=key)
-    # def validat_create(self, values, valid_keys):
-    #     recom_msg = tools.validat_values(values, valid_keys)
-    #     return self.validat(recom_msg)
-    #
-    # def validat_update(self, values, valid_keys):
-    #     recom_msg = tools.validat_update_values(values, valid_keys)
-    #     return self.validat(recom_msg)
-    #
-    # def validat(self, values):
-    #     """
-    #     not use
-    #     :param values:
-    #     :param valid_keys:
-    #     :return:
-    #     """
-    #     recom_msg = values
-    #     for key in values.keys():
-    #         if key == "tenant_id":
-    #             if not tools.is_not_nil(values['tenant_id']):
-    #                 raise ParamNull(param_name=key)
-    #         elif key == "name":
-    #             if not tools.is_not_nil(values['name']):
-    #                 raise ParamNull(param_name=key)
-    #         elif key == "enable":
-    #             if not tools.is_not_nil(values['enable']):
-    #                 raise ParamNull(param_name=key)
-    #             if values['enable'] not in ['yes', 'no']:
-    #                 raise ParamValueError(param_name=key)
-    #         elif key == 'ttl':
-    #             try:
-    #                 ttl = int(values['ttl'])
-    #             except Exception as e:
-    #                 raise ParamFormatError(param_name=key)
-    #             # if ttl > - 0 and ttl <= 3600:
-    #             #     raise ParamFormatError(param_name=key)
-    #             recom_msg['ttl'] = ttl
-    #         elif key == 'max_addr_ret':
-    #             try:
-    #                 max_addr_ret = int(values['max_addr_ret'])
-    #             except Exception as e:
-    #                 raise ParamFormatError(param_name=key)
-    #         elif key == "type":
-    #             if values['type'] not in ['A', 'CNAME']:
-    #                 raise ParamValueError(param_name=key)
-    #         elif key == "first_algorithm" or key == 'second_algorithm':
-    #             if values[key] not in ['sp', 'fi']:
-    #                 raise ParamValueError(param_name=key)
-    #         elif key == "fallback_ip":
-    #             if not tools._is_valid_ipv4_addr(values['fallback_ip']):
-    #                 raise ParamValueError(param_name=key)
-    #         elif key == 'hms':
-    #             if len(values[key]) <= 0:
-    #                 raise ParamValueError(param_name=key)
-    #         elif key == 'pass':
-    #             try:
-    #                 pass_ = int(values['pass'])
-    #             except Exception as e:
-    #                 raise ParamFormatError(param_name=key)
-    #             if pass_ > len(values['hms']):
-    #                 raise ParamValueError(param_name=key)
-    #         elif key == 'gmember_list':
-    #             if len(values[key]) <= 0:
-    #                 raise ParamValueError(param_name=key)
-    #     if 'first_algorithm' in values.keys() and 'second_algorithm' in values.keys():
-    #         if values['first_algorithm'] == values["second_algorithm"]:
-    #             raise ParamValueError(
-    #                 param_name='first_algrith and second_algrithm')
-    #
-    #     return recom_msg
-    #
-    # def not_nesscary(self, values):
-    #     """
-    #     not use
-    #     :param values:
-    #     :return:
-    #     """
-    #     recomsg = values
-    #     if 'cname' in values.keys() and values['cname'] != '':
-    #         recomsg["max_addr_ret"] = ''
-    #         recomsg["first_algorithm"] = ''
-    #         recomsg['second_algorithm'] = ''
-    #         recomsg["fallback_ip"] = ''
-    #         recomsg['hms'] = []
-    #         recomsg['pass'] = ''
-    #         recomsg['gmember_list'] = []
-    #     if 'warning' not in values.keys():
-    #         recomsg['warning'] = 'yes'
-    #     if 'hms' not in values.keys():
-    #         recomsg['hms'] = []
-    #     if 'gmember_list' not in values.keys():
-    #         recomsg['gmember_list'] = []
-    #     return recomsg
+
+    def check_remove(self, dic):
+        if 'id' not in dic.keys():
+            raise ParamNull(param_name='id')
+
+    def get_return_convert(self,gpool):
+        for dic in gpool:
+            if 'hms' in dic:
+                if dic['hms'] == "":
+                    dic['hms'] =[]
+                else:
+                    try:
+                        dic['hms']=eval(dic['hms'])
+                    except:
+                        pass
+            if 'gmember_list' in dic:
+                if dic['gmember_list'] == "":
+                    dic['gmember_list'] =[]
+                else:
+                    try:
+                        dic['gmember_list']=eval(dic['gmember_list'])
+                    except:
+                        pass
+        return gpool

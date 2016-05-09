@@ -1,6 +1,7 @@
 from oslo_config import cfg
 from oslo_log import log as logging
 from nca47 import objects
+from nca47.manager.cli_manager import CLIManager
 from nca47.manager.dns_manager import DNSManager
 from nca47.manager.firewall_manager.fw_manager import FirewallManager
 from nca47.common import exception
@@ -20,6 +21,7 @@ class CentralManager(object):
     def __init__(self):
         self.dns_manager = DNSManager.get_instance()
         self.fw_manager = FirewallManager.get_instance()
+        self.cli_manager = CLIManager.get_instance()
 
     @classmethod
     def get_instance(cls):
@@ -64,6 +66,11 @@ class CentralManager(object):
         zone_objs = self.dns_manager.get_all_db_zone(context)
         return zone_objs
 
+    def get_db_zones(self, context, zones):
+        """call DB to get all zones"""
+        zone_objs = self.dns_manager.get_db_zones(context, zones)
+        return zone_objs
+
     def get_dev_records(self, context, zone_id):
         """ get all records from device"""
         records = self.dns_manager.get_dev_records(context, zone_id)
@@ -72,6 +79,11 @@ class CentralManager(object):
     def get_db_records(self, context, zone_id):
         """get all records belong special zone from db"""
         records = self.dns_manager.get_db_records(context, zone_id)
+        return records
+
+    def query_records(self, context, rrs):
+        """get all records belong special zone from db"""
+        records = self.dns_manager.query_records(context, rrs)
         return records
 
     def get_record_from_db(self, context, record_id):
@@ -124,6 +136,11 @@ class CentralManager(object):
         zone_obj = self.dns_manager.get_members(context)
         return zone_obj
 
+    def get_db_members(self, context, members):
+        """call DB to get all members"""
+        members_objs = self.dns_manager.get_db_members(context, members)
+        return members_objs
+
     def get_region_db_detail(self, context, id):
         """show target region details info from db"""
         zone_obj = self.dns_manager.get_region_db_detail(context, id)
@@ -133,6 +150,11 @@ class CentralManager(object):
         """call DB to get all regions"""
         zone_objs = self.dns_manager.get_all_db_region(context)
         return zone_objs
+
+    def get_db_regions(self, context, regions):
+        """call DB to get all regions"""
+        regions_objs = self.dns_manager.get_db_regions(context, regions)
+        return regions_objs
 
     def create_sp_policy(self, context, proximity):
         """"create new proximity"""
@@ -171,9 +193,14 @@ class CentralManager(object):
         zone_objs = self.dns_manager.get_all_db_proximity(context)
         return zone_objs
 
-    def get_gmembers_db(self, context):
+    def get_db_proximitys(self, context, proximitys):
+        """call DB to get all proximitys"""
+        proximitys_objs = self.dns_manager.get_db_proximitys(context, proximitys)
+        return proximitys_objs
+
+    def get_gmembers_db(self, context, dic):
         """get all gmembers"""
-        response = self.dns_manager.get_gmembers_db(context)
+        response = self.dns_manager.get_gmembers_db(context, dic)
         return response
 
     def get_one_gmember_db(self, context, gmember_uuid):
@@ -196,9 +223,9 @@ class CentralManager(object):
         response = self.dns_manager.delete_gmember(context, gmember_uuid)
         return response
 
-    def get_hm_templates_db(self, context):
+    def get_hm_templates_db(self, context, dic):
         """get all hm_templates"""
-        response = self.dns_manager.get_hm_templates_db(context)
+        response = self.dns_manager.get_hm_templates_db(context, dic)
         return response
 
     def get_one_hm_template_db(self, context, template_uuid):
@@ -384,47 +411,50 @@ class CentralManager(object):
     def create_syngroup(self, context, syngroup_dict):
         return self.dns_manager.create_syngroup(context, syngroup_dict)
 
-    def update_syngroup(self, context, syngroup_dict, id):
-        return self.dns_manager.update_syngroup(context, syngroup_dict, id)
+    def update_syngroup(self, context, syngroup_dict):
+        return self.dns_manager.update_syngroup(context, syngroup_dict)
 
     def remove_syngroup(self, context, syngroup_id):
         return self.dns_manager.remove_syngroup(context, syngroup_id)
 
-    def get_syngroups(self, context):
-        return self.dns_manager.get_db_syngroups(context)
+    def get_syngroups(self, context, values):
+        return self.dns_manager.get_syngroups(context, values)
 
     def get_syngroup(self, context, syngroup_id):
         return self.dns_manager.get_syngroup(context, syngroup_id)
 
-    def delete_syngroup(self, context, syngroup_id):
-        return self.dns_manager.delete_syngroup(context, syngroup_id)
+    def delete_syngroup(self, context, values):
+        return self.dns_manager.delete_syngroup(context, values)
 
     def create_gpool(self, context, gpool_dict):
         return self.dns_manager.create_gpool(context, gpool_dict)
 
-    def update_gpool(self, context, gpool_dict, id):
-        return self.dns_manager.update_gpool(context, gpool_dict, id)
+    def update_gpool(self, context, gpool_dict):
+        return self.dns_manager.update_gpool(context, gpool_dict)
 
-    def get_gpools(self, context):
-        return self.dns_manager.get_db_gpools(context)
+    def get_gpools(self, context, values):
+        return self.dns_manager.get_gpools(context, values)
 
     def get_gpool(self, context, gpool_id):
         return self.dns_manager.get_gpool(context, gpool_id)
 
-    def delete_gpool(self, context, gpool_id):
-        return self.dns_manager.delete_gpool(context, gpool_id)
+    def delete_gpool(self, context, values):
+        return self.dns_manager.delete_gpool(context, values)
 
     def create_gmap(self, context, gmap_dict):
         return self.dns_manager.create_gmap(context, gmap_dict)
 
-    def update_gmap(self, context, gmap_dict, id):
-        return self.dns_manager.update_gmap(context, gmap_dict, id)
+    def update_gmap(self, context, gmap_dict):
+        return self.dns_manager.update_gmap(context, gmap_dict)
 
-    def get_gmaps(self, context):
-        return self.dns_manager.get_db_gmaps(context)
+    def get_gmaps(self, context, values):
+        return self.dns_manager.get_gmaps(context, values)
 
     def get_gmap(self, context, gmap_id):
         return self.dns_manager.get_gmap(context, gmap_id)
 
-    def delete_gmap(self, context, gmap_id):
-        return self.dns_manager.delete_gmap(context, gmap_id)
+    def delete_gmap(self, context, values):
+        return self.dns_manager.delete_gmap(context, values)
+
+    def execute_commands(self, context, commands):
+        return self.cli_manager.execute_commands(context, commands)

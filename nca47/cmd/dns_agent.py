@@ -1,10 +1,9 @@
 import sys
+sys.path.append('/vagrant/nca47')
 
-from oslo_config import cfg
 from nca47.common import service as nca47_service
 from nca47.manager import service
 from nca47.agent.agentFlag import agent_config
-sys.path.append('/vagrant/nca47')
 
 
 def main():

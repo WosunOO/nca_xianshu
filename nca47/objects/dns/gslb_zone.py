@@ -72,6 +72,11 @@ class GslbZone(base.Nca47Object):
         values["deleted"] = False
         try:
             record = self.db_api.get_object(GslbZoneInfo, **values)
-        except Exception as e:
+        except Exception:
             raise IsNotExistError(param_name=values["id"])
+        return record
+
+    def get_object_one(self, context, **values):
+        # get one information of gslb_zone
+        record = self.db_api.get_object(GslbZoneInfo, **values)
         return record

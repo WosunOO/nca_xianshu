@@ -28,7 +28,6 @@ class DnsSyngroupController(base.BaseRestController):
     client's corresponding method to send messaging to agent endpoint
     """
 
-
     def __init__(self):
         self.manager = central.CentralManager.get_instance()
         super(DnsSyngroupController, self).__init__(self)
@@ -79,14 +78,11 @@ class DnsSyngroupController(base.BaseRestController):
         try:
             url = req.url
             values = json.loads(req.body)
+            values['id'] = id
             LOG.info(_("the in value body if %(body)s"), {'body': values})
-            LOG.info(_("the id is %(id)s"), {"id": id})
-            valid_attributes = [
-                "gslb_zone_names", "probe_range", "pass"
-            ]
-            self.check_update(valid_attributes, values)
+            self.check_update(values)
             syngroups = self.manager.update_syngroup(
-                context, values, id)
+                context, values)
             # args[0] is id
         except Nca47Exception as e:
             self.response.status = e.code
@@ -114,11 +110,11 @@ class DnsSyngroupController(base.BaseRestController):
         """
         context = req.context
         try:
-            url = req.url
-            # LOG.info(_("The in value body is %(body)s"),{"body",values})
-            LOG.info(_("The id is %(id)s"), {"id": id})
-            recom_msg = {}
-            syngroup = self.manager.delete_syngroup(context, id)
+            values = json.loads(req.body)
+            values['id'] = id
+            self.check_remove(values)
+            LOG.info(_('the in value body is %(body)s'), {'body': values})
+            syngroup = self.manager.delete_syngroup(context, values)
         except Nca47Exception as e:
             LOG.error(_LE('Error exception! error info: %' + e.message))
             LOG.exception(e)
@@ -165,7 +161,6 @@ class DnsSyngroupController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return syngroup
 
-
     def list(self, req, *args, **kwargs):
         """
         list all syngroup method
@@ -181,14 +176,15 @@ class DnsSyngroupController(base.BaseRestController):
             search_opts.update(req.GET)
             # values = json.loads(req.body)
             # if 'device' in args:
-            #     LOG.info(_("args is %(args)s,kwargs is %(kwargs)s"), {'args': args, 'kwargs': kwargs})
+            #     LOG.info(_("args is %(args)s,kwargs is %(kwargs)s"),
+            #              {'args': args, 'kwargs': kwargs})
             #     zones = self.manager.list_syngroup(context)
             # else:
             LOG.info(
                 _("args is %(args)s,kwargs is %(kwargs)s"), {
                     'args': args, "kwargs": kwargs})
             self.check_search(search_opts)
-            syngroup = self.manager.get_syngroups(context)
+            syngroup = self.manager.get_syngroups(context, search_opts)
             LOG.info(_("Retrun of get_all_db_zone JSON is %(syngroup)s !"),
                      {"syngroup": syngroup})
         except Nca47Exception as e:
@@ -205,7 +201,6 @@ class DnsSyngroupController(base.BaseRestController):
             self.response.status = 500
             return tools.ret_info(self.response.status, exception.message)
         return syngroup
-
 
     def show(self, req, id, *args, **kwargs):
         """
@@ -235,23 +230,25 @@ class DnsSyngroupController(base.BaseRestController):
             return tools.ret_info(self.response.status, exception.message)
         return syngroup
 
-    def check_search(self,dic):
-        import pdb
-        pdb.set_trace()
-        lis = ['tenant_id','name','gslb_zone_names','pass','probe_range']
+    def check_search(self, dic):
+        validate_list = ['tenant_id', 'name', 'gslb_zone_names', 'pass', 'probe_range']
         for key in dic.keys():
-            if key not in lis:
+            if key not in validate_list:
                 raise IllegalParam(param_name=key)
 
-
-    def check_update(self, lis, dic):
-        if 'tenant_id' in dic.keys():
-            raise NotAllowModify(param_name="tenant_id")
+    def check_update(self, dic):
+        if 'tenant_id' not in dic.keys():
+            raise ParamNull(param_name="tenant_id")
         if 'name' in dic.keys():
             raise NotAllowModify(param_name="name")
+        validate_list = [
+                "tenant_id","id","gslb_zone_names", "probe_range", "pass"
+            ]
         for key in dic.keys():
-            if key not in lis:
+            if key not in validate_list:
                 raise IllegalParam(param_name=key)
+        if 'id' not in dic.keys():
+            raise ParamNull(param_name='id')
         if 'pass' in dic.keys():
             try:
                 int(dic['pass'])
@@ -270,10 +267,10 @@ class DnsSyngroupController(base.BaseRestController):
                 raise NonExistParam(param_name=i)
             if not tools.is_not_nil(dic[i]):
                 raise ParamNull(param_name=i)
-        list1 = ['gslb_zone_names', 'pass', 'probe_range',
+        validate_list = ['gslb_zone_names', 'pass', 'probe_range',
                  'tenant_id', 'name']
         for key in dic.keys():
-            if key not in list1:
+            if key not in validate_list:
                 raise IllegalParam(param_name=key)
         if 'pass' in dic.keys():
             try:
@@ -284,3 +281,19 @@ class DnsSyngroupController(base.BaseRestController):
             if dic['probe_range'] not in [
                     'local_only', 'local_first', 'all_dc', ""]:
                 raise ParamValueError(param_name='probe_range')
+
+    def check_remove(self, dic):
+        if 'id' not in dic.keys():
+            raise ParamNull(param_name='id')
+
+    def get_return_convert(self,syngroup):
+        for dic in syngroup:
+            if 'gslb_zone_names' in dic:
+                if dic['gslb_zone_names'] == "":
+                    dic['gslb_zone_names'] =[]
+                else:
+                    try:
+                        dic['gslb_zone_names']=eval(dic['gslb_zone_names'])
+                    except:
+                        pass
+        return syngroup

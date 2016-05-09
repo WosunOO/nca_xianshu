@@ -6,20 +6,25 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('suds.client').setLevel(logging.DEBUG)
 
-FW_AGENT_OPTS = [
-    cfg.StrOpt('fw_username',
+BACKEND_FW_OPTS = [
+    cfg.StrOpt('host',
+               default='127.0.0.1',
+               help=_('The server hostname/ip to connect to.')),
+    cfg.StrOpt('username',
                default='username',
-               help=_('The username on which nca47-fw_driver listens.')),
-    cfg.StrOpt('fw_passwd',
-               default='passwd',
-               help=_('The passwd on which nca47-fw_driver listens.')),
+               help=_('The username which use for connect backend '
+                      'firewall device')),
+    cfg.StrOpt('password',
+               default='password',
+               help=_('The password which use to connect backend '
+                      'firewall device')),
 ]
 
 CONF = cfg.CONF
-opt_group = cfg.OptGroup(name='fw_agent',
-                         title='Options for the nca47-fw_driver service')
+opt_group = cfg.OptGroup(name='firewall_backend',
+                         title="The backend firewall device's access infos")
 CONF.register_group(opt_group)
-CONF.register_opts(FW_AGENT_OPTS, opt_group)
+CONF.register_opts(BACKEND_FW_OPTS, opt_group)
 
 SOAP_CLIENT = None
 username = None
@@ -27,10 +32,11 @@ passwd = None
 
 
 class fw_client():
+
     def __init__(self):
-        self.username = CONF.fw_agent.fw_username
-        self.passwd = CONF.fw_agent.fw_passwd
-        return
+        self.host = CONF.firewall_backend.host
+        self.username = CONF.firewall_backend.username
+        self.passwd = CONF.firewall_backend.passwd
 
     @classmethod
     def get_instance(cls):
@@ -39,9 +45,12 @@ class fw_client():
             SOAP_CLIENT = cls()
         return SOAP_CLIENT
 
-    def get_client(self, url):
+    def get_client(self, url_dir):
         try:
-            client = Client(url, username=self.username, password=self.passwd)
+            ip_link = 'http://%s' % self.host
+            full_url = "%s%s" % (ip_link, url_dir)
+            client = Client(full_url, username=self.username,
+                            password=self.passwd)
             service = client.service
         except Exception as e:
             raise derviceError

@@ -57,3 +57,7 @@ class DnsZone(base.Nca47Object):
     def get_objects(self, context, **values):
         zone = self.db_api.get_objects(ZoneModel, **values)
         return zone
+
+    def get_all_object(self, context, values):
+        zone = self.db_api.get_all_object(ZoneModel, values)
+        return zone

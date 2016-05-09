@@ -97,6 +97,12 @@ class RegionController(base.BaseRestController):
         # get the context
         context = req.context
         try:
+            # get the body
+            values = {}
+            values.update(kwargs)
+            # check the in values
+            valid_attributes = ['tenant_id']
+            recom_msg = self.validat_parms(values, valid_attributes)
             if kwargs.get('device'):
                 LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                          {"args": args, "kwargs": kwargs})
@@ -106,8 +112,8 @@ class RegionController(base.BaseRestController):
                 LOG.info(_(" args is %(args)s, kwargs is %(kwargs)s"),
                          {"args": args, "kwargs": kwargs})
                 # from db server get the regions in db
-                regions = self.manager.get_all_db_region(context)
-                LOG.info(_("Return get_all_db_region JSON is %(regions)s !"),
+                regions = self.manager.get_db_regions(context, recom_msg)
+                LOG.info(_("Return get_db_regions JSON is %(regions)s !"),
                          {"regions": regions})
         except Nca47Exception as e:
             self.response.status = e.code

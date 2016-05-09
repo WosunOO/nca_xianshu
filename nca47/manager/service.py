@@ -144,8 +144,12 @@ class FWService(service.RPCService, service.Service):
     """
     RPC_API_VERSION = '1.0'
 
-    def __init__(self, topic='firewall_manager', threads=None):
-        self.rpc_topic = topic
+    def __init__(self, topic='firewall_manager',  agentinfo=None,
+                 threads=None):
+        if agentinfo:
+            self.rpc_topic = '%s.%s' % (topic, agentinfo['agent_ip'])
+        else:
+            self.rpc_topic = topic
         super(FWService, self).__init__(threads=threads)
         self.agent = agent.get_firewall_backend()
 
@@ -160,267 +164,249 @@ class FWService(service.RPCService, service.Service):
         super(FWService, self).stop()
 
     # this is a vlan operation
-    def create_vlan(self, context, vlan_infos, agent_info):
+    def create_vlan(self, context, vlan_infos):
         LOG.info(_LI("create_vlan: Calling central's create_vlan."))
-        response = self.agent.create_vlan(context, vlan_infos, agent_info)
+        response = self.agent.create_vlan(context, vlan_infos)
         return response
 
-    def del_vlan(self, context, id_, vlan_infos, agent_info):
+    def del_vlan(self, context, id_, vlan_infos):
         LOG.info(_LI("del_vlan: Calling central's del_vlan."))
-        response = self.agent.del_vlan(context, id_, vlan_infos, agent_info)
+        response = self.agent.del_vlan(context, id_, vlan_infos)
         return response
 
-    def get_vlan(self, context, vlan_infos, agent_info):
+    def get_vlan(self, context, vlan_infos):
         LOG.info(_LI("get_vlan: Calling central's get_vlan."))
-        response = self.agent.get_vlan(context, vlan_infos, agent_info)
+        response = self.agent.get_vlan(context, vlan_infos)
         return response
 
-    def get_vlans(self, context, vlan_infos, agent_info):
+    def get_vlans(self, context, vlan_infos):
         LOG.info(_LI("get_vlans: Calling central's get_vlans."))
-        response = self.agent.get_vlans(context, vlan_infos, agent_info)
+        response = self.agent.get_vlans(context, vlan_infos)
         return response
 
     # this is a netservice operation
-    def create_netservice(self, context, netsev_infos, agent_info):
+    def create_netservice(self, context, netsev_infos):
         LOG.info(_LI("create_netservice: Calling central's"
                      "create_netservice."))
-        response = self.agent.create_netservice(context, netsev_infos,
-                                                agent_info)
+        response = self.agent.create_netservice(context, netsev_infos)
         return response
 
-    def del_netservice(self, context, id_, netsev_infos, agent_info):
+    def del_netservice(self, context, id_, netsev_infos):
         LOG.info(_LI("del_netservice: Calling central's del_netservice."))
-        response = self.agent.del_netservice(context, id_, netsev_infos,
-                                             agent_info)
+        response = self.agent.del_netservice(context, id_, netsev_infos)
         return response
 
-    def get_netservice(self, context, netsev_infos, agent_info):
+    def get_netservice(self, context, netsev_infos):
         LOG.info(_LI("get_netservice: Calling central's get_netservice."))
-        response = self.agent.get_netservice(context, netsev_infos,
-                                             agent_info)
+        response = self.agent.get_netservice(context, netsev_infos)
         return response
 
-    def get_netservices(self, context, netsev_infos, agent_info):
+    def get_netservices(self, context, netsev_infos):
         LOG.info(_LI("get_netservices: Calling central's get_netservices."))
-        response = self.agent.get_netservices(context, netsev_infos,
-                                              agent_info)
+        response = self.agent.get_netservices(context, netsev_infos)
         return response
 
     # this is a addrobj operation
-    def add_addrobj(self, context, addrobj_infos, agent_info):
+    def add_addrobj(self, context, addrobj_infos):
         LOG.info(_LI("add_addrobj: Calling central's add_addrobj."))
-        response = self.agent.add_addrobj(context, addrobj_infos,
-                                          agent_info)
+        response = self.agent.add_addrobj(context, addrobj_infos)
         return response
 
-    def del_addrobj(self, context, addrobj_infos, agent_info):
+    def del_addrobj(self, context, addrobj_infos):
         LOG.info(_LI("del_addrobj: Calling central's del_addrobj."))
         response = self.agent.del_addrobj(
-            context, addrobj_infos['id'], addrobj_infos, agent_info)
+            context, addrobj_infos['id'], addrobj_infos)
         return response
 
-    def get_addrobj(self, context, addrobj_infos, agent_info):
+    def get_addrobj(self, context, addrobj_infos):
         LOG.info(_LI("get_addrobj: Calling central's get_addrobj."))
-        response = self.agent.get_addrobj(context, addrobj_infos, agent_info)
+        response = self.agent.get_addrobj(context, addrobj_infos)
         return response
 
-    def get_addrobjs(self, context, addrobj_infos, agent_info):
+    def get_addrobjs(self, context, addrobj_infos):
         LOG.info(_LI("get_addrobjs: Calling central's get_addrobjs."))
-        response = self.agent.get_addrobjs(context, addrobj_infos, agent_info)
+        response = self.agent.get_addrobjs(context, addrobj_infos)
         return response
 
     # this is a snataddrpool operation
-    def add_snataddrpool(self, context, snataddrpool_infos, agent_info):
+    def add_snataddrpool(self, context, snataddrpool_infos):
         LOG.info(_LI("add_snataddrpool: Calling central's add_snataddrpool."))
-        response = self.agent.add_snataddrpool(context, snataddrpool_infos,
-                                               agent_info)
+        response = self.agent.add_snataddrpool(context, snataddrpool_infos)
         return response
 
-    def del_snataddrpool(self, context, snataddrpool_infos, agent_info):
+    def del_snataddrpool(self, context, snataddrpool_infos):
         LOG.info(_LI("del_snataddrpool: Calling central's del_snataddrpool."))
         response = self.agent.del_snataddrpool(
-            context, snataddrpool_infos['id'], snataddrpool_infos, agent_info)
+            context, snataddrpool_infos['id'], snataddrpool_infos)
         return response
 
-    def get_snataddrpool(self, context, snataddrpool_infos, agent_info):
+    def get_snataddrpool(self, context, snataddrpool_infos):
         LOG.info(_LI("get_snataddrpool: Calling central's get_snataddrpool."))
-        response = self.agent.get_snataddrpool(context, snataddrpool_infos,
-                                               agent_info)
+        response = self.agent.get_snataddrpool(context, snataddrpool_infos)
         return response
 
-    def get_snataddrpools(self, context, snataddrpool_infos, agent_info):
+    def get_snataddrpools(self, context, snataddrpool_infos):
         LOG.info(_LI("get_snataddrpools: Calling central's"
                      "get_snataddrpools."))
-        response = self.agent.get_snataddrpools(context, snataddrpool_infos,
-                                                agent_info)
+        response = self.agent.get_snataddrpools(context, snataddrpool_infos)
         return response
 
-    def create_vfw(self, context, vfw, agent_info):
+    def create_vfw(self, context, vfw):
         LOG.info(_LI("create_vfw: Calling central's create_vfw."))
-        response = self.agent.create_vfw(context, vfw, agent_info)
+        response = self.agent.create_vfw(context, vfw)
         return response
 
-    def delete_vfw(self, context, vfw, agent_info):
+    def delete_vfw(self, context, vfw):
         LOG.info(_LI("delete_vfw: Calling central's delete_vfw."))
-        response = self.agent.delete_vfw(context, vfw, agent_info)
+        response = self.agent.delete_vfw(context, vfw)
         return response
 
-    def get_vfw(self, context, vfw, agent_info):
+    def get_vfw(self, context, vfw):
         LOG.info(_LI("get_vfw: Calling central's get_vfw."))
-        response = self.agent.get_vfw(context, vfw, agent_info)
+        response = self.agent.get_vfw(context, vfw)
         return response
 
-    def get_all_vfws(self, context, vfw, agent_info):
+    def get_all_vfws(self, context, vfw):
         LOG.info(_LI("get_all_vfws: Calling central's get_all_vfws."))
-        response = self.agent.get_all_vfws(context, vfw, agent_info)
+        response = self.agent.get_all_vfws(context, vfw)
         return response
 
-    def create_dnat(self, context, dnat, agent_info):
+    def create_dnat(self, context, dnat):
         LOG.info(_LI("create_dnat: Calling central's create_dnat."))
-        response = self.agent.create_dnat(context, dnat, agent_info)
+        response = self.agent.create_dnat(context, dnat)
         return response
 
-    def delete_dnat(self, context, dnat, agent_info):
+    def delete_dnat(self, context, dnat):
         LOG.info(_LI("delete_dnat: Calling central's delete_dnat."))
-        response = self.agent.delete_dnat(context, dnat, agent_info)
+        response = self.agent.delete_dnat(context, dnat)
         return response
 
-    def get_dnat(self, context, dnat, agent_info):
+    def get_dnat(self, context, dnat):
         LOG.info(_LI("get_dnat: Calling central's get_dnat."))
-        response = self.agent.get_dnat(context, dnat, agent_info)
+        response = self.agent.get_dnat(context, dnat)
         return response
 
-    def get_all_dnats(self, context, dnat, agent_info):
+    def get_all_dnats(self, context, dnat):
         LOG.info(_LI("get_all_dnats: Calling central's get_all_dnats."))
-        response = self.agent.get_all_dnats(context, dnat, agent_info)
+        response = self.agent.get_all_dnats(context, dnat)
         return response
 
-    def create_packetfilter(self, context, packetfilter, agent_info):
+    def create_packetfilter(self, context, packetfilter):
         LOG.info(_LI("create_packetfilter: Calling central's"
                      "create_packetfilter."))
-        response = self.agent.create_packetfilter(context, packetfilter,
-                                                  agent_info)
+        response = self.agent.create_packetfilter(context, packetfilter)
         return response
 
-    def delete_packetfilter(self, context, packetfilter, agent_info):
+    def delete_packetfilter(self, context, packetfilter):
         LOG.info(_LI("delete_packetfilter: Calling central's"
                      "delete_packetfilter."))
-        response = self.agent.delete_packetfilter(context, packetfilter,
-                                                  agent_info)
+        response = self.agent.delete_packetfilter(context, packetfilter)
         return response
 
-    def get_packetfilter(self, context, packetfilter, agent_info):
+    def get_packetfilter(self, context, packetfilter):
         LOG.info(_LI("get_packetfilter: Calling central's get_packetfilter."))
-        response = self.agent.get_packetfilter(context, packetfilter,
-                                               agent_info)
+        response = self.agent.get_packetfilter(context, packetfilter)
         return response
 
-    def get_all_packetfilters(self, context, packetfilter, agent_info):
+    def get_all_packetfilters(self, context, packetfilter):
         LOG.info(_LI("get_all_packetfilters: Calling central's"
                      "get_all_packetfilters."))
-        response = self.agent.get_all_packetfilters(context, packetfilter,
-                                                    agent_info)
+        response = self.agent.get_all_packetfilters(context, packetfilter)
         return response
 
-    def create_vrf(self, context, vrf, agent_info):
+    def create_vrf(self, context, vrf):
         LOG.info(_LI("create_vrf: Calling central's create_vrf."))
-        response = self.agent.create_vrf(context, vrf, agent_info)
+        response = self.agent.create_vrf(context, vrf)
         return response
 
-    def del_vrf(self, context, vrf, agent_info):
+    def del_vrf(self, context, vrf):
         LOG.info(_LI("del_vrf: Calling central's del_vrf."))
-        response = self.agent.del_vrf(context, vrf, agent_info)
+        response = self.agent.del_vrf(context, vrf)
         return response
 
-    def get_vrf(self, context, vrf, agent_info):
+    def get_vrf(self, context, vrf):
         LOG.info(_LI("get_vrf: Calling central's get_vrf."))
-        response = self.agent.get_vrf(context, vrf, agent_info)
+        response = self.agent.get_vrf(context, vrf)
         return response
 
-    def get_vrfs(self, context, vrf, agent_info):
+    def get_vrfs(self, context, vrf):
         LOG.info(_LI("get_vrfs: Calling central's get_vrfs."))
-        response = self.agent.get_vrfs(context, vrf, agent_info)
+        response = self.agent.get_vrfs(context, vrf)
         return response
 
-    def create_snat(self, context, snat, agent_info):
+    def create_snat(self, context, snat):
         LOG.info(_LI("create_snat: Calling central's create_snat."))
-        response = self.agent.create_snat(context, snat, agent_info)
+        response = self.agent.create_snat(context, snat)
         return response
 
-    def del_snat(self, context, snat, agent_info):
+    def del_snat(self, context, snat):
         LOG.info(_LI("del_snat: Calling central's del_snat."))
-        response = self.agent.del_snat(context, snat, agent_info)
+        response = self.agent.del_snat(context, snat)
         return response
 
-    def get_snat(self, context, snat, agent_info):
+    def get_snat(self, context, snat):
         LOG.info(_LI("get_snat: Calling central's get_snat."))
-        response = self.agent.get_snat(context, snat, agent_info)
+        response = self.agent.get_snat(context, snat)
         return response
 
-    def get_snats(self, context, snat, agent_info):
+    def get_snats(self, context, snat):
         LOG.info(_LI("get_snats: Calling central's get_snats."))
-        response = self.agent.get_snats(context, snat, agent_info)
+        response = self.agent.get_snats(context, snat)
         return response
 
-    def create_securityZone(self, context, securityzone, agent_info):
+    def create_securityZone(self, context, securityzone):
         LOG.info(_LI("create_securityZone: Calling central's"
                      "create_securityZone."))
-        response = self.agent.create_securityZone(context, securityzone,
-                                                  agent_info)
+        response = self.agent.create_securityZone(context, securityzone)
         return response
 
-    def securityZone_addif(self, context, securityzone, agent_info):
+    def securityZone_addif(self, context, securityzone):
         LOG.info(_LI("securityZone_addif: Calling central's"
                      "securityZone_addif."))
-        response = self.agent.securityZone_addif(context, securityzone,
-                                                 agent_info)
+        response = self.agent.securityZone_addif(context, securityzone)
         return response
 
-    def securityZone_delif(self, context, securityzone, agent_info):
+    def securityZone_delif(self, context, securityzone):
         LOG.info(_LI("securityZone_delif: Calling central's"
                      "securityZone_delif."))
-        response = self.agent.securityZone_delif(context, securityzone,
-                                                 agent_info)
+        response = self.agent.securityZone_delif(context, securityzone)
         return response
 
-    def del_securityZone(self, context, securityzone, agent_info):
+    def del_securityZone(self, context, securityzone):
         LOG.info(_LI("del_securityZone: Calling central's del_securityZone."))
-        response = self.agent.del_securityZone(context, securityzone,
-                                               agent_info)
+        response = self.agent.del_securityZone(context, securityzone)
         return response
 
-    def get_securityZone(self, context, securityzone, agent_info):
+    def get_securityZone(self, context, securityzone):
         LOG.info(_LI("get_securityZone: Calling central's"
                      "get_securityZone."))
-        response = self.agent.get_securityZone(context, securityzone,
-                                               agent_info)
+        response = self.agent.get_securityZone(context, securityzone)
         return response
 
-    def get_securityZones(self, context, securityzone, agent_info):
+    def get_securityZones(self, context, securityzone):
         LOG.info(_LI("get_securityZones: Calling central's"
                      "get_securityZones."))
-        response = self.agent.get_securityZones(context, securityzone,
-                                                agent_info)
+        response = self.agent.get_securityZones(context, securityzone)
         return response
 
-    def create_staticnat(self, context, staticnat, agent_info):
+    def create_staticnat(self, context, staticnat):
         LOG.info(_LI("create_staticnat: Calling central's create_staticnat."))
-        response = self.agent.create_staticnat(context, staticnat, agent_info)
+        response = self.agent.create_staticnat(context, staticnat)
         return response
 
-    def del_staticnat(self, context, staticnat, agent_info):
+    def del_staticnat(self, context, staticnat):
         LOG.info(_LI("del_staticnat: Calling central's del_staticnat."))
-        response = self.agent.del_staticnat(context, staticnat, agent_info)
+        response = self.agent.del_staticnat(context, staticnat)
         return response
 
-    def get_staticnat(self, context, staticnat, agent_info):
+    def get_staticnat(self, context, staticnat):
         LOG.info(_LI("get_staticnat: Calling central's get_staticnat."))
-        response = self.agent.get_staticnat(context, staticnat, agent_info)
+        response = self.agent.get_staticnat(context, staticnat)
         return response
 
-    def get_staticnats(self, context, staticnat, agent_info):
+    def get_staticnats(self, context, staticnat):
         LOG.info(_LI("get_staticnats: Calling central's get_staticnats."))
-        response = self.agent.get_staticnats(context, staticnat, agent_info)
+        response = self.agent.get_staticnats(context, staticnat)
         return response
 
 
@@ -479,3 +465,36 @@ class AgentService(service.RPCService, service.Service):
             agent_obj.update_time = timeutils.utcnow()
             agent_obj.create(context, agent_obj.as_dict())
         return agent
+
+
+class CLIService(service.RPCService, service.Service):
+
+    """
+    Use for handling command-line interface requests and validation
+    request parametes
+    """
+    RPC_API_VERSION = '1.0'
+
+    def __init__(self, topic='cli_manager', agentinfo=None, threads=None):
+        if agentinfo:
+            self.rpc_topic = '%s.%s' % (topic, agentinfo['agent_ip'])
+        else:
+            self.rpc_topic = topic
+        super(CLIService, self).__init__(threads=threads)
+        self.agent = agent.get_cli_backend()
+
+    @property
+    def service_name(self):
+        return self.rpc_topic
+
+    def start(self):
+        super(CLIService, self).start()
+
+    def stop(self):
+        super(CLIService, self).stop()
+
+    def execute_commands(self, context, req):
+        cli_client = self.agent.sshClient(**req)
+        commands = req['commands']
+        response = cli_client.send(commands)
+        return response
